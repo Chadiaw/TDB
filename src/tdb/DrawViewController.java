@@ -11,12 +11,15 @@ package tdb;
  */
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ResourceBundle;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
+import javafx.scene.ImageCursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -25,6 +28,7 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -37,6 +41,8 @@ import javax.imageio.ImageIO;
  */
 public class DrawViewController implements Initializable {
 
+    @FXML
+    Button homeButton;
     @FXML
     Button saveButton;
     @FXML
@@ -66,10 +72,14 @@ public class DrawViewController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         sizeTextField.setText("10.0");
         sizeTextField.setEditable(false);
-        wordLabel.setText("Arrow");
+        wordLabel.setText("ARROW");
         colorPicker.setValue(Color.ORANGE);
         graphicsContext = drawCanvas.getGraphicsContext2D();
         initDraw(graphicsContext);
+
+    }
+
+    public void homeScreen(ActionEvent event) {
 
     }
 
@@ -82,14 +92,17 @@ public class DrawViewController implements Initializable {
         // Select where to save the image
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save drawing");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG","*.png"));
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG","*.jpg"));
-    
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG", "*.jpg"));
+
         File file = fileChooser.showSaveDialog(saveButton.getScene().getWindow());
         try {
             ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
         } catch (IOException e) {
             // TODO: handle exception here
+            e.printStackTrace();
+        } catch (java.lang.IllegalArgumentException e) {
+            //e.printStackTrace();
         }
     }
 
@@ -107,6 +120,24 @@ public class DrawViewController implements Initializable {
             currentSize++;
         }
         sizeTextField.setText(String.valueOf(currentSize));
+    }
+
+    public void enterPanel(MouseEvent event) {
+        if (eraserToggle.isSelected()) {
+            Image image = new Image(new File("src/tdb/images/circle-cursor.png").toURI().toString());
+            ImageCursor cursor = new ImageCursor(image,
+                                image.getWidth() / 2,
+                                image.getHeight() /2);
+
+            drawCanvas.getScene().setCursor(cursor);
+            //drawCanvas.getScene().setCursor(Cursor.CROSSHAIR);
+        } else {
+            drawCanvas.getScene().setCursor(Cursor.DEFAULT);
+        }
+    }
+
+    public void exitPanel(MouseEvent event) {
+        drawCanvas.getScene().setCursor(Cursor.DEFAULT);
     }
 
     public void clickPanelAction(MouseEvent event) {

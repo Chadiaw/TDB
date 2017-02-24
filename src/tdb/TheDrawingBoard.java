@@ -25,6 +25,7 @@ public class TheDrawingBoard extends Application {
         
         stage.setTitle("The Drawing Board - Solo Mode Prototype");
         stage.setScene(scene);
+        stage.setResizable(false);
         stage.show();
     }
 
