@@ -1,0 +1,12 @@
+
+.root {
+    -fx-background-image: url("../images/background4.jpg");
+    -fx-background-position: center;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 600 700;
+    
+}
+
+#soloButton {
+    
+}

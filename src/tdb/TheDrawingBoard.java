@@ -19,11 +19,11 @@ public class TheDrawingBoard extends Application {
     
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("DrawView.fxml"));
+        Parent root = FXMLLoader.load(getClass().getResource("HomeScreen.fxml"));
         
         Scene scene = new Scene(root);
         
-        stage.setTitle("The Drawing Board - Solo Mode Prototype");
+        stage.setTitle("The Drawing Board");
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();

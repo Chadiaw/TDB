@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -33,6 +35,8 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javax.imageio.ImageIO;
 
 /**
@@ -67,7 +71,6 @@ public class DrawViewController implements Initializable {
 
     GraphicsContext graphicsContext;
 
-    //private Videoclub application;
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         sizeTextField.setText("10.0");
@@ -80,6 +83,16 @@ public class DrawViewController implements Initializable {
     }
 
     public void homeScreen(ActionEvent event) {
+        // Close this view
+        Stage stage = (Stage) homeButton.getScene().getWindow();
+        stage.close();
+        
+        // Open Home Screen
+        try {
+            ViewManager.getInstance().openView("HomeScreen.fxml", "The Drawing Board", StageStyle.DECORATED);
+        } catch (IOException ex) {
+            Logger.getLogger(DrawViewController.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
     }
 
@@ -95,14 +108,15 @@ public class DrawViewController implements Initializable {
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG", "*.jpg"));
 
-        File file = fileChooser.showSaveDialog(saveButton.getScene().getWindow());
+        File fileChoice = fileChooser.showSaveDialog(saveButton.getScene().getWindow());
+        if (fileChoice == null) {
+            // User canceled the save.
+            return;
+        }
         try {
-            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
-        } catch (IOException e) {
-            // TODO: handle exception here
-            e.printStackTrace();
-        } catch (java.lang.IllegalArgumentException e) {
-            //e.printStackTrace();
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", fileChoice);
+        } catch (IOException ex) {
+            Logger.getLogger(DrawViewController.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

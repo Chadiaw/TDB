@@ -12,13 +12,13 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="800.0" stylesheets="@styles/DrawView.css" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tdb.DrawViewController">
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" stylesheets="@styles/DrawView.css" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tdb.DrawViewController">
    <children>
       <VBox prefHeight="600.0" prefWidth="800.0">
          <children>
             <HBox prefHeight="45.0" prefWidth="800.0" spacing="200.0">
                <children>
-                  <ToolBar prefHeight="60.0" prefWidth="800.0">
+                  <ToolBar maxWidth="-Infinity" minWidth="-Infinity" prefHeight="60.0" prefWidth="800.0">
                     <items>
                         <HBox spacing="10.0">
                            <children>
