@@ -10,7 +10,7 @@
 
 <AnchorPane id="AnchorPane" prefHeight="630.0" prefWidth="500.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.60" fx:controller="tdb.HomeScreenController">
     <stylesheets>
-        <URL value="@/tdb/styles/homescreen.css" />
+        <URL value="@/tdb/styles/HomeScreen.css" />
     </stylesheets>
    <children>
       <VBox prefHeight="600.0" prefWidth="500.0" spacing="10.0">
