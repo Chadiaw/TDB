@@ -2,7 +2,7 @@
 <jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="The Drawing Board.jnlp">
   <information>
     <title>The Drawing Board</title>
-    <vendor>cheikh</vendor>
+    <vendor>Kadiatou</vendor>
     <description>null</description>
     <offline-allowed/>
   </information>

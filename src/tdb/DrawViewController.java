@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,6 +94,10 @@ public class DrawViewController implements Initializable {
         } catch (IOException ex) {
             Logger.getLogger(DrawViewController.class.getName()).log(Level.SEVERE, null, ex);
         }
+        letterModule letter = new letterModule();
+        ArrayList<String> words =letter.letterReader();
+        letter.RandWord(words);
+        // afficher le mot sur la vue du tableau de dessin
 
     }
 
