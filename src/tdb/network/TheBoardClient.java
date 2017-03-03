@@ -27,12 +27,11 @@ public class TheBoardClient {
     private static Socket socket = null;
     private static ObjectOutputStream output = null;
     private static ObjectInputStream input = null;
-    private static String hostname = "localhost";
     private static int port;
     private static GraphicsContext gc;
     private static ObservableList<String> users;
 
-    public TheBoardClient(GraphicsContext gc, ObservableList<String> usersList) throws IOException {
+    public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList) throws IOException {
 
         port = TheBoardServer.listeningPort;
         socket = new Socket(hostname, port);

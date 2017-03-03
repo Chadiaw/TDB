@@ -7,7 +7,9 @@ package tdb;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -70,16 +72,15 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private Label usersLabel;
-    @FXML 
+    @FXML
     private Button connectButton;
-    
+
     @FXML
     private ListView<String> usersList;
     ObservableList<String> items = FXCollections.observableArrayList();
-    
+
     GraphicsContext graphicsContext;
     TheBoardClient tbClient = null;
-    
 
     /**
      * Initializes the controller class.
@@ -99,11 +100,11 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private void homeScreen(ActionEvent event) {
-        if(tbClient != null) {
+        if (tbClient != null) {
             // Disconnect. 
             tbClient.disconnect();
             //items.clear();
-            
+
         }
         Utilities.goToHomeScreen(homeButton, TheBoardViewController.class.getName());
     }
@@ -154,8 +155,9 @@ public class TheBoardViewController implements Initializable {
         DrawCommand command = new AddToLine(event.getX(), event.getY());
         command.doIt(graphicsContext);
 
-        if(tbClient != null)
+        if (tbClient != null) {
             tbClient.sendCommand(command);
+        }
     }
 
     @FXML
@@ -181,14 +183,35 @@ public class TheBoardViewController implements Initializable {
     private void clickPanelAction(MouseEvent event) {
         DrawCommand command = new StartLine(event.getX(), event.getY());
         command.doIt(graphicsContext);
-        if(tbClient != null)
+        if (tbClient != null) {
             tbClient.sendCommand(command);
+        }
     }
 
     @FXML
     private void connectToServer(ActionEvent event) {
+
+        // Ask for hostname
+        String host;
+        TextInputDialog dialog = new TextInputDialog("localhost");
+        dialog.setTitle("Hostname");
         try {
-            tbClient = new TheBoardClient(graphicsContext, items);
+            dialog.setHeaderText(String.format("Your hostname (localhost) is : %1$s",
+                    InetAddress.getLocalHost().getHostName()));
+        } catch (UnknownHostException ex) {
+            dialog.setHeaderText("Your IP (localhost) is : Unknown");
+        }
+        dialog.setContentText("Please enter the hostname to join : ");
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            host = result.get();
+        } else {
+            // Maybe need to close the connection here, somehow. Must be tested. 
+            return;
+        }
+
+        try {
+            tbClient = new TheBoardClient(host, graphicsContext, items);
             tbClient.startReceiveThread();
         } catch (IOException ex) {
             Alert alert = new Alert(AlertType.ERROR);
@@ -201,11 +224,11 @@ public class TheBoardViewController implements Initializable {
 
         if (tbClient != null) {
             // Ask for username
-            TextInputDialog dialog = new TextInputDialog();
+            dialog = new TextInputDialog();
             dialog.setTitle("Username selection");
             dialog.setHeaderText(null);
             dialog.setContentText("Please select a username : ");
-            Optional<String> result = dialog.showAndWait();
+            result = dialog.showAndWait();
             if (result.isPresent()) {
                 tbClient.sendUsername(result.get());
                 connectButton.setDisable(true);
@@ -213,7 +236,7 @@ public class TheBoardViewController implements Initializable {
                 TheDrawingBoard.setBoardClient(tbClient);
             } else {
                 // Maybe need to close the connection here, somehow. Must be tested. 
-                
+
             }
         }
     }
