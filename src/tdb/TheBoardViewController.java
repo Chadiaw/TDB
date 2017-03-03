@@ -197,7 +197,7 @@ public class TheBoardViewController implements Initializable {
         dialog.setTitle("Hostname");
         try {
             dialog.setHeaderText(String.format("Your hostname (localhost) is : %1$s",
-                    InetAddress.getLocalHost().getHostName()));
+                    InetAddress.getLocalHost()));
         } catch (UnknownHostException ex) {
             dialog.setHeaderText("Your IP (localhost) is : Unknown");
         }
@@ -213,11 +213,18 @@ public class TheBoardViewController implements Initializable {
         try {
             tbClient = new TheBoardClient(host, graphicsContext, items);
             tbClient.startReceiveThread();
+        } catch (UnknownHostException ex) {
+            Alert alert = new Alert(AlertType.ERROR);
+            alert.setTitle("Connection error");
+            alert.setHeaderText(null);
+            alert.setContentText("Could not resolve the host. "+ ex.getMessage());
+            alert.showAndWait();
+
         } catch (IOException ex) {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Connection error");
             alert.setHeaderText(null);
-            alert.setContentText("Could not connect to server. ");
+            alert.setContentText("Could not connect to server. "+ ex.getMessage());
             alert.showAndWait();
 
         }

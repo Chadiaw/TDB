@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,7 +32,7 @@ public class TheBoardClient {
     private static GraphicsContext gc;
     private static ObservableList<String> users;
 
-    public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList) throws IOException {
+    public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList) throws UnknownHostException, IOException {
 
         port = TheBoardServer.listeningPort;
         socket = new Socket(hostname, port);
