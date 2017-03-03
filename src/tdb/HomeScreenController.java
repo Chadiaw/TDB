@@ -42,7 +42,6 @@ public class HomeScreenController implements Initializable {
         // TODO
         twoPlayersButton.setDisable(true);
         multiplayerButton.setDisable(true);
-        theBoardButton.setDisable(true);
         
     }    
     
@@ -68,7 +67,16 @@ public class HomeScreenController implements Initializable {
     }
     
     public void goBoardMode (ActionEvent event) {
+        // Close home screen
+        Stage stage = (Stage) theBoardButton.getScene().getWindow();
+        stage.close();
         
+        // Open The Board View
+        try {
+            ViewManager.getInstance().openView("TheBoardView.fxml", "The Board", StageStyle.UTILITY);
+        } catch (IOException ex) {
+            Logger.getLogger(HomeScreenController.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
 }

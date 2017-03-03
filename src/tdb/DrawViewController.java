@@ -11,7 +11,6 @@ package tdb;
  */
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -78,62 +77,27 @@ public class DrawViewController implements Initializable {
         wordLabel.setText("ARROW");
         colorPicker.setValue(Color.ORANGE);
         graphicsContext = drawCanvas.getGraphicsContext2D();
-        initDraw(graphicsContext);
+        Utilities.initDraw(graphicsContext);
 
     }
 
     public void homeScreen(ActionEvent event) {
-        // Close this view
-        Stage stage = (Stage) homeButton.getScene().getWindow();
-        stage.close();
-        
-        // Open Home Screen
-        try {
-            ViewManager.getInstance().openView("HomeScreen.fxml", "The Drawing Board", StageStyle.DECORATED);
-        } catch (IOException ex) {
-            Logger.getLogger(DrawViewController.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
+        Utilities.goToHomeScreen(homeButton, DrawViewController.class.getName());
     }
 
     /**
      * Save the drawing as an image file locally.
      */
     public void saveImage(ActionEvent event) {
-        WritableImage image = drawCanvas.snapshot(new SnapshotParameters(), null);
-
-        // Select where to save the image
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save drawing");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JPEG", "*.jpg"));
-
-        File fileChoice = fileChooser.showSaveDialog(saveButton.getScene().getWindow());
-        if (fileChoice == null) {
-            // User canceled the save.
-            return;
-        }
-        try {
-            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", fileChoice);
-        } catch (IOException ex) {
-            Logger.getLogger(DrawViewController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        Utilities.saveImage(drawCanvas, DrawViewController.class.getName());
     }
 
     public void minusSizeAction(ActionEvent event) {
-        double currentSize = Double.parseDouble(sizeTextField.getText());
-        if (currentSize > 1) {
-            currentSize--;
-        }
-        sizeTextField.setText(String.valueOf(currentSize));
+        Utilities.decreasePencilSize(sizeTextField);
     }
 
     public void plusSizeAction(ActionEvent event) {
-        double currentSize = Double.parseDouble(sizeTextField.getText());
-        if (currentSize < 50) {
-            currentSize++;
-        }
-        sizeTextField.setText(String.valueOf(currentSize));
+        Utilities.increasePencilSize(sizeTextField);
     }
 
     public void enterPanel(MouseEvent event) {
@@ -144,7 +108,6 @@ public class DrawViewController implements Initializable {
                                 image.getHeight() /2);
 
             drawCanvas.getScene().setCursor(cursor);
-            //drawCanvas.getScene().setCursor(Cursor.CROSSHAIR);
         } else {
             drawCanvas.getScene().setCursor(Cursor.DEFAULT);
         }
@@ -155,13 +118,10 @@ public class DrawViewController implements Initializable {
     }
 
     public void clickPanelAction(MouseEvent event) {
-        graphicsContext.beginPath();
-        graphicsContext.moveTo(event.getX(), event.getY());
-        graphicsContext.stroke();
+        new StartLine(event.getX(), event.getY()).doIt(graphicsContext);
     }
 
     public void dragOnPanelAction(MouseEvent event) {
-
         if (!eraserToggle.isSelected()) {
             // Eraser not toggled : get the drawing color from the picker
             graphicsContext.setStroke(colorPicker.getValue());
@@ -178,9 +138,8 @@ public class DrawViewController implements Initializable {
             graphicsContext.setLineWidth(1);
             sizeTextField.setText("1.0");
         }
-
-        graphicsContext.lineTo(event.getX(), event.getY());
-        graphicsContext.stroke();
+        
+        new AddToLine(event.getX(), event.getY()).doIt(graphicsContext);
     }
 
     public void releaseOnPanelAction(MouseEvent event) {
@@ -194,33 +153,8 @@ public class DrawViewController implements Initializable {
     public void clearPanel(ActionEvent event) {
         graphicsContext.clearRect(0, 0, drawCanvas.getWidth(), drawCanvas.getHeight());
         graphicsContext.beginPath();
-        initDraw(graphicsContext);
+        Utilities.initDraw(graphicsContext);
 
     }
 
-    /**
-     * *
-     * Initializes the drawing panel.
-     *
-     * @param gc
-     */
-    private void initDraw(GraphicsContext gc) {
-        double canvasWidth = gc.getCanvas().getWidth();
-        double canvasHeight = gc.getCanvas().getHeight();
-
-        gc.setFill(Color.WHITE);
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(3);
-
-        gc.fill();
-
-        // Draw the panel outline 
-        gc.fillRect(0, 0, canvasWidth, canvasWidth);
-        gc.strokeRect(
-                0, //x of the upper left corner
-                0, //y of the upper left corner
-                canvasWidth, //width of the rectangle
-                canvasHeight);  //height of the rectangle
-
-    }
 }

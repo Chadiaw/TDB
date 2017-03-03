@@ -10,12 +10,17 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import tdb.network.TheBoardClient;
+import tdb.network.TheBoardServer;
 
 /**
  *
  * @author cheikh
  */
 public class TheDrawingBoard extends Application {
+    
+    private static TheBoardClient uniqueClient = null; 
+    private TheBoardServer boardServer;
     
     @Override
     public void start(Stage stage) throws Exception {
@@ -27,6 +32,9 @@ public class TheDrawingBoard extends Application {
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();
+        
+        boardServer = new TheBoardServer(4444, true);
+        boardServer.start();
     }
 
     /**
@@ -34,6 +42,19 @@ public class TheDrawingBoard extends Application {
      */
     public static void main(String[] args) {
         launch(args);
+    }
+    
+    @Override
+    public void stop() {
+        if (uniqueClient != null) {
+            uniqueClient.disconnect();
+        }
+        if (boardServer.isAlive())
+            boardServer.disconnect();
+    }
+    
+    public static void setBoardClient(TheBoardClient client) {
+        uniqueClient = client;
     }
     
 }

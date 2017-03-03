@@ -35,9 +35,9 @@
 }
 
 #wordLabel {
-    -fx-font-size: 35px;
+    -fx-font-size: 30px;
     -fx-font-family : "Century Schoolbook";
     -fx-font-weight: bold;
-    -fx-text-fill: greenyellow;
+    -fx-text-fill: #fc7b5a;
     -fx-effect: innershadow( three-pass-box , black, 6, 0.0 , 0 , 2 );
 }

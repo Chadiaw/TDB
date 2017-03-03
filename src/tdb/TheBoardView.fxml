@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ColorPicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" stylesheets="@styles/TheBoard.css" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tdb.TheBoardViewController">
+   <children>
+      <Separator layoutX="801.0" layoutY="7.0" orientation="VERTICAL" prefHeight="600.0" prefWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="800.0" AnchorPane.rightAnchor="200.0" AnchorPane.topAnchor="0.0" />
+      <AnchorPane prefHeight="600.0" prefWidth="767.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="200.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" stylesheets="@styles/DrawView.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <VBox prefHeight="600.0" prefWidth="800.0">
+                     <children>
+                        <HBox prefHeight="45.0" prefWidth="800.0" spacing="200.0">
+                           <children>
+                              <ToolBar maxWidth="-Infinity" minWidth="-Infinity" prefHeight="60.0" prefWidth="800.0">
+                                 <items>
+                                    <HBox spacing="10.0">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" prefHeight="45.0" prefWidth="482.0" spacing="10.0">
+                                             <children>
+                                                <HBox spacing="10.0">
+                                                   <children>
+                                                      <Button fx:id="homeButton" mnemonicParsing="false" onAction="#homeScreen" prefHeight="45.0" prefWidth="50.0" />
+                                                      <Button fx:id="saveButton" contentDisplay="GRAPHIC_ONLY" mnemonicParsing="false" onAction="#saveImage" prefHeight="45.0" prefWidth="50.0" />
+                                                      <Button fx:id="clearButton" mnemonicParsing="false" onAction="#clearPanel" prefHeight="45.0" prefWidth="50.0" />
+                                                      <Separator orientation="VERTICAL" prefHeight="45.0" />
+                                                   </children>
+                                                </HBox>
+                                                <HBox alignment="CENTER" prefWidth="288.0" spacing="20.0">
+                                                   <children>
+                                                      <ToggleButton fx:id="eraserToggle" mnemonicParsing="false" prefHeight="40.0" prefWidth="40.0" />
+                                                      <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                                         <children>
+                                                            <Button fx:id="sizeMinusButton" mnemonicParsing="false" onAction="#minusSizeAction" prefHeight="31.0" prefWidth="33.0" text="-" />
+                                                            <TextField fx:id="sizeTextField" alignment="CENTER" prefHeight="31.0" prefWidth="60.0" />
+                                                            <Button fx:id="sizePlusButton" layoutX="10.0" layoutY="17.0" mnemonicParsing="false" onAction="#plusSizeAction" prefHeight="31.0" prefWidth="33.0" text="+" />
+                                                         </children>
+                                                      </HBox>
+                                                      <ColorPicker fx:id="colorPicker" prefHeight="31.0" prefWidth="57.0" />
+                                                   </children>
+                                                </HBox>
+                                             </children>
+                                          </HBox>
+                                          <Separator orientation="VERTICAL" prefHeight="45.0" />
+                                          <HBox alignment="CENTER" spacing="20.0">
+                                             <children>
+                                                <Label fx:id="wordLabel" alignment="CENTER" prefHeight="45.0" prefWidth="203.0" text="Word" />
+                                                <Button fx:id="resetWordButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="50.0" />
+                                             </children>
+                                          </HBox>
+                                       </children>
+                                    </HBox>
+                                 </items>
+                              </ToolBar>
+                           </children>
+                        </HBox>
+                        <Canvas fx:id="drawCanvas" height="539.0" onMouseDragged="#dragOnPanelAction" onMouseEntered="#enterPanel" onMouseExited="#exitPanel" onMousePressed="#clickPanelAction" onMouseReleased="#releaseOnPanelAction" width="800.0" />
+                     </children>
+                  </VBox>
+               </children>
+            </AnchorPane>
+         </children>
+      </AnchorPane>
+      <AnchorPane layoutX="788.0" layoutY="-8.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="212.0" AnchorPane.leftAnchor="788.0">
+         <children>
+            <Label fx:id="usersLabel" alignment="CENTER" contentDisplay="CENTER" layoutX="15.0" layoutY="15.0" text="Users connected" AnchorPane.bottomAnchor="550.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="20.0">
+               <font>
+                  <Font name="Century Schoolbook Bold" size="18.0" />
+               </font>
+            </Label>
+            <ListView fx:id="usersList" layoutY="68.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="200.0" AnchorPane.bottomAnchor="55.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="66.0" />
+            <Button fx:id="connectButton" layoutX="-1.0" layoutY="569.0" mnemonicParsing="false" onAction="#connectToServer" text="Connect" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="550.0" />
+         </children>
+      </AnchorPane>
+   </children>
+</AnchorPane>
