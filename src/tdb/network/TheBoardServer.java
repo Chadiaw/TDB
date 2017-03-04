@@ -41,15 +41,16 @@ public class TheBoardServer extends Thread {
     }
 
     public void disconnect() {
-        if (serverSocket != null)
+        if (serverSocket != null) {
             try {
                 serverSocket.close();
-        } catch (IOException ex) {
-            Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
-            
+
     }
-    
+
     @Override
     public void run() {
         try {
@@ -60,11 +61,10 @@ public class TheBoardServer extends Thread {
                     System.out.println(String.format("(TheBoardServer) : Listening on port %1$d for connection...", listeningPort));
                 }
                 // Accept connection
-                Socket socket; 
+                Socket socket;
                 try {
                     socket = serverSocket.accept();
-                }
-                catch (SocketException ex) {
+                } catch (SocketException ex) {
                     Logger.getLogger(TheBoardServer.class.getName()).log(Level.FINE, "Server socket closed.", ex);
                     break;
                 }
@@ -84,11 +84,11 @@ public class TheBoardServer extends Thread {
         } catch (IOException e) {
             Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE,
                     String.format("Could not listen on port %1$d", listeningPort), e);
-        }
-        finally {
+        } finally {
             try {
-                if (serverSocket != null)
+                if (serverSocket != null) {
                     serverSocket.close();
+                }
             } catch (IOException ex) {
                 Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -117,9 +117,12 @@ public class TheBoardServer extends Thread {
         public void run() {
             try (
                     // Gets the socket input and output streams
-                    ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
-                    ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());) {
-
+                    ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+                    ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());) {
+                boolean disconnect = false;
+                // Connection was succesful, add output stream to the list
+                CLIENTS_STREAMS.add(out);
+                
                 SocketPacket received;
 
                 // Wait for the username to be sent
@@ -133,6 +136,10 @@ public class TheBoardServer extends Thread {
                     if (received.getType().equals(PacketType.USERNAME)) {
                         // String was passed : it's the username
                         clientUsername = (String) received.getMsg();
+                        if (clientUsername.equals("") || clientUsername == null) {
+                            disconnect = true;
+                            break;
+                        }
 
                         synchronized (USERNAMES) {
                             if (!USERNAMES.contains(clientUsername)) {
@@ -156,13 +163,24 @@ public class TheBoardServer extends Thread {
                                 out.writeObject(packet);
                             }
                         }
-
+                    } else if (received.getType().equals(PacketType.DISCONNECT)) {
+                        CLIENTS_STREAMS.remove(out);
+                        disconnect = true;
+                        break;
                     }
                 }
 
-                // New client's username has been added, send him the full list 
+                if (disconnect) {
+                    if (DEBUG_MODE) {
+                        System.out.println(String.format("Client is disconnected (No username. Socket closed."));
+                    }
+                    clientSocket.close();
+                    return;
+                }
+
+                // New client's username has been added, broadcast the updated list 
                 SocketPacket usernamesList = new SocketPacket(PacketType.LIST, USERNAMES);
-                out.writeObject(usernamesList);
+                broadcast(usernamesList);
 
                 if (DEBUG_MODE) {
                     System.out.println(String.format(" List of usernames sent to client '%1$s'.", clientUsername));
@@ -173,15 +191,11 @@ public class TheBoardServer extends Thread {
                 while ((received = (SocketPacket) in.readObject()) != null) {
                     if (received.getType().equals(PacketType.DRAW_INPUT)) {
                         // Send it to all the other clients
-                        synchronized (CLIENTS_STREAMS) {
-                            Iterator<ObjectOutputStream> i = CLIENTS_STREAMS.iterator();
-                            while (i.hasNext()) {
-                                i.next().writeObject(received);
-                            }
-                        }
+                        broadcast(received);
+
                         /*
                         if (DEBUG_MODE) {
-                            System.out.println("  Drawing input received and passed to all the clients");
+                            System.out.println("  Drawing input received from '" + clientUsername + "' and passed to all the clients");
                         }
                          */
                     } else if (received.getType().equals(PacketType.DISCONNECT)) {
@@ -191,12 +205,7 @@ public class TheBoardServer extends Thread {
 
                         // Send updated list to the other clients before closing out the socket.
                         SocketPacket newList = new SocketPacket(PacketType.LIST, USERNAMES);
-                        synchronized (CLIENTS_STREAMS) {
-                            Iterator<ObjectOutputStream> i = CLIENTS_STREAMS.iterator();
-                            while (i.hasNext()) {
-                                i.next().writeObject(newList);
-                            }
-                        }
+                        broadcast(newList);
 
                         break;
 
@@ -211,6 +220,27 @@ public class TheBoardServer extends Thread {
                 Logger.getLogger(BoardServerThread.class.getName()).log(Level.SEVERE, null, e);
             } catch (ClassNotFoundException ex) {
                 Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        /**
+         * Sends a SocketPacket to all the connected clients
+         *
+         * @param packet
+         */
+        private void broadcast(SocketPacket packet) {
+            synchronized (CLIENTS_STREAMS) {
+                Iterator<ObjectOutputStream> i = CLIENTS_STREAMS.iterator();
+                ObjectOutputStream output;
+                while (i.hasNext()) {
+                    try {
+                        output = i.next();
+                        output.writeObject(packet);
+                        output.reset();
+                    } catch (IOException ex) {
+                        Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
             }
         }
     }

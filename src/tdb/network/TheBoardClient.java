@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import tdb.DrawCommand;
 import javafx.scene.canvas.GraphicsContext;
@@ -37,6 +38,7 @@ public class TheBoardClient {
         port = TheBoardServer.listeningPort;
         socket = new Socket(hostname, port);
         output = new ObjectOutputStream(socket.getOutputStream());
+        output.flush();
         input = new ObjectInputStream(socket.getInputStream());
         users = usersList;
         this.gc = gc;
@@ -48,21 +50,41 @@ public class TheBoardClient {
      * and executes them with the current GraphicsContext
      */
     public void startReceiveThread() {
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    SocketPacket received;
-                    while ((received = (SocketPacket) input.readObject()) != null) {
+                    SocketPacket received = null;
+                    while (true) {
+                        received = (SocketPacket) input.readObject();
                         // If the received packet is a draw input, execute it. 
                         if (received.getType().equals(PacketType.DRAW_INPUT)) {
                             DrawCommand command = (DrawCommand) received.getObject();
-                            command.doIt(gc);
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    command.doIt(gc);
+                                }
+                            }
+                            );
+                            
                         } else if (received.getType().equals(PacketType.LIST)) {
+                            
                             // It could be the list of usernames too, in that case just update it.
                             List<String> list = (List<String>) received.getObject();
-                            users.clear();
-                            users.addAll(list);
+                            for (String user : list) {
+                                System.out.print(user + " | ");
+                            }
+                                
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    users.clear();
+                                    users.addAll(list);
+                                }
+                            }
+                            );
                         }
                     }
                 } catch (EOFException e) {
@@ -119,8 +141,7 @@ public class TheBoardClient {
                 SocketPacket packet = new SocketPacket(PacketType.DISCONNECT, null);
                 output.writeObject(packet);
                 TheDrawingBoard.setBoardClient(null);
-            }
-            catch (IOException ex ) {
+            } catch (IOException ex) {
                 Logger.getLogger(TheBoardClient.class.getName()).log(Level.SEVERE, null, ex);
             }
 

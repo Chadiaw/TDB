@@ -78,7 +78,16 @@ public class DrawViewController implements Initializable {
         colorPicker.setValue(Color.ORANGE);
         graphicsContext = drawCanvas.getGraphicsContext2D();
         Utilities.initDraw(graphicsContext);
+        getCurrentValues();
 
+    }
+    
+    /**
+     * Set the graphicsContext color and line width to the current values 
+     */
+    private void getCurrentValues() {
+        graphicsContext.setStroke(colorPicker.getValue());
+        graphicsContext.setLineWidth(Double.parseDouble(sizeTextField.getText()));
     }
 
     public void homeScreen(ActionEvent event) {
@@ -118,28 +127,29 @@ public class DrawViewController implements Initializable {
     }
 
     public void clickPanelAction(MouseEvent event) {
-        new StartLine(event.getX(), event.getY()).doIt(graphicsContext);
+        double lineWidth = Double.parseDouble(sizeTextField.getText());
+        new StartLine(event.getX(), event.getY(), colorPicker.getValue(),lineWidth).doIt(graphicsContext);
     }
 
     public void dragOnPanelAction(MouseEvent event) {
+        Color drawColor;
         if (!eraserToggle.isSelected()) {
             // Eraser not toggled : get the drawing color from the picker
-            graphicsContext.setStroke(colorPicker.getValue());
+            drawColor = colorPicker.getValue();
 
         } else {
-            graphicsContext.setStroke(Color.WHITE);
-
+           drawColor = Color.WHITE;
         }
 
         // Get the line width from the text field
+        double lineWidth = 1.0;
         try {
-            graphicsContext.setLineWidth(Double.parseDouble(sizeTextField.getText()));
+            lineWidth = Double.parseDouble(sizeTextField.getText());
         } catch (NumberFormatException e) {
-            graphicsContext.setLineWidth(1);
             sizeTextField.setText("1.0");
         }
         
-        new AddToLine(event.getX(), event.getY()).doIt(graphicsContext);
+        new AddToLine(event.getX(), event.getY(), drawColor, lineWidth).doIt(graphicsContext);
     }
 
     public void releaseOnPanelAction(MouseEvent event) {
@@ -151,9 +161,8 @@ public class DrawViewController implements Initializable {
      * Clears the drawing panel.
      */
     public void clearPanel(ActionEvent event) {
-        graphicsContext.clearRect(0, 0, drawCanvas.getWidth(), drawCanvas.getHeight());
-        graphicsContext.beginPath();
-        Utilities.initDraw(graphicsContext);
+        new ClearDrawing().doIt(graphicsContext);
+        getCurrentValues();
 
     }
 

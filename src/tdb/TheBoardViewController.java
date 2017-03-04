@@ -29,6 +29,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
@@ -94,8 +95,30 @@ public class TheBoardViewController implements Initializable {
         colorPicker.setValue(Color.AQUAMARINE);
         graphicsContext = drawCanvas.getGraphicsContext2D();
         Utilities.initDraw(graphicsContext);
+        getCurrentValues();
         drawCanvas.setDisable(true);
         usersList.setItems(items);
+
+        usersList.setCellFactory(param -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                }
+            }
+        });
+    }
+
+    /**
+     * Set the graphicsContext color and line width to the current values
+     */
+    private void getCurrentValues() {
+        graphicsContext.setStroke(colorPicker.getValue());
+        graphicsContext.setLineWidth(Double.parseDouble(sizeTextField.getText()));
     }
 
     @FXML
@@ -103,8 +126,6 @@ public class TheBoardViewController implements Initializable {
         if (tbClient != null) {
             // Disconnect. 
             tbClient.disconnect();
-            //items.clear();
-
         }
         Utilities.goToHomeScreen(homeButton, TheBoardViewController.class.getName());
     }
@@ -116,9 +137,12 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private void clearPanel(ActionEvent event) {
-        graphicsContext.clearRect(0, 0, drawCanvas.getWidth(), drawCanvas.getHeight());
-        graphicsContext.beginPath();
-        Utilities.initDraw(graphicsContext);
+        DrawCommand command = new ClearDrawing();
+        command.doIt(graphicsContext);
+        if (tbClient != null) {
+            tbClient.sendCommand(command);
+        }
+        getCurrentValues();
     }
 
     @FXML
@@ -137,23 +161,31 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private void dragOnPanelAction(MouseEvent event) {
+        Color drawColor;
         if (!eraserToggle.isSelected()) {
             // Eraser not toggled : get the drawing color from the picker
-            graphicsContext.setStroke(colorPicker.getValue());
+            drawColor = colorPicker.getValue();
         } else {
-            graphicsContext.setStroke(Color.WHITE);
+            drawColor = Color.WHITE;
         }
 
         // Get the line width from the text field
+        double lineWidth = 1.0;
         try {
-            graphicsContext.setLineWidth(Double.parseDouble(sizeTextField.getText()));
+            lineWidth = Double.parseDouble(sizeTextField.getText());
         } catch (NumberFormatException e) {
-            graphicsContext.setLineWidth(1);
             sizeTextField.setText("1.0");
         }
 
-        DrawCommand command = new AddToLine(event.getX(), event.getY());
-        command.doIt(graphicsContext);
+        graphicsContext.setStroke(drawColor);
+        graphicsContext.setLineWidth(lineWidth);
+        graphicsContext.lineTo(event.getX(), event.getY());
+        graphicsContext.stroke();
+        
+        DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
+        
+        
+        //command.doIt(graphicsContext);
 
         if (tbClient != null) {
             tbClient.sendCommand(command);
@@ -181,8 +213,12 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private void clickPanelAction(MouseEvent event) {
-        DrawCommand command = new StartLine(event.getX(), event.getY());
-        command.doIt(graphicsContext);
+        double lineWidth = Double.parseDouble(sizeTextField.getText());
+        graphicsContext.beginPath();
+        graphicsContext.moveTo(event.getX(), event.getY());
+        
+        DrawCommand command = new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth);
+        //command.doIt(graphicsContext);
         if (tbClient != null) {
             tbClient.sendCommand(command);
         }
@@ -217,14 +253,14 @@ public class TheBoardViewController implements Initializable {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Connection error");
             alert.setHeaderText(null);
-            alert.setContentText("Could not resolve the host. "+ ex.getMessage());
+            alert.setContentText("Could not resolve the host. " + ex.getMessage());
             alert.showAndWait();
 
         } catch (IOException ex) {
             Alert alert = new Alert(AlertType.ERROR);
             alert.setTitle("Connection error");
             alert.setHeaderText(null);
-            alert.setContentText("Could not connect to server. "+ ex.getMessage());
+            alert.setContentText("Could not connect to server. " + ex.getMessage());
             alert.showAndWait();
 
         }
@@ -242,7 +278,12 @@ public class TheBoardViewController implements Initializable {
                 drawCanvas.setDisable(false);
                 TheDrawingBoard.setBoardClient(tbClient);
             } else {
-                // Maybe need to close the connection here, somehow. Must be tested. 
+                if (tbClient != null) {
+                    // Disconnect. 
+                    tbClient.disconnect();
+                    tbClient = null;
+                    TheDrawingBoard.setBoardClient(null);
+                }
 
             }
         }
