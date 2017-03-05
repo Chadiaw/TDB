@@ -19,13 +19,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Server for 'The Board' mode
+ * Server for 'The Board' mode. Defines the operations for the server, and
+ * allows multiple clients to be connected.
  *
  * @author cheikh
  */
 public class TheBoardServer extends Thread {
 
-    protected static int listeningPort = 44444;
+    public static int listeningPort = 4444; // This is default listening port.
     public static boolean DEBUG_MODE = true;
     private static final List<String> USERNAMES = Collections.synchronizedList(new ArrayList<String>());
     private static final List<ObjectOutputStream> CLIENTS_STREAMS = Collections
@@ -37,9 +38,16 @@ public class TheBoardServer extends Thread {
         super("TheBoardServer");
         DEBUG_MODE = debug;
         listeningPort = port;
-
     }
 
+    public TheBoardServer(boolean debug) {
+        super("TheBoardServer");
+        DEBUG_MODE = debug;
+    }
+
+    /**
+     * Disconnect the server (Close the listening socket).
+     */
     public void disconnect() {
         if (serverSocket != null) {
             try {
@@ -51,9 +59,14 @@ public class TheBoardServer extends Thread {
 
     }
 
+    /**
+     * Creates the server socket, accepts connections, creates threads to deal
+     * with each client.
+     */
     @Override
     public void run() {
         try {
+
             serverSocket = new ServerSocket(listeningPort);
             while (true) {
 
@@ -99,7 +112,7 @@ public class TheBoardServer extends Thread {
      * Defines the server-side operations for 'The Board' mode. AFter getting
      * the username from the client, the server loops and waits for drawing info
      * to be sent by the client. That info is then broadcasted to all the
-     * clients.
+     * clients. Chat messages are also to be broadcasted (not yet implemented).
      *
      * @author cheikh
      */
@@ -119,10 +132,11 @@ public class TheBoardServer extends Thread {
                     // Gets the socket input and output streams
                     ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
                     ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());) {
+
                 boolean disconnect = false;
                 // Connection was succesful, add output stream to the list
                 CLIENTS_STREAMS.add(out);
-                
+
                 SocketPacket received;
 
                 // Wait for the username to be sent
@@ -131,39 +145,50 @@ public class TheBoardServer extends Thread {
                             clientSocket.getInetAddress().getCanonicalHostName()));
                 }
 
+                // 1st loop (Identification) : Wait for a valid username to be sent by the client.
                 while ((received = (SocketPacket) in.readObject()) != null) {
 
                     if (received.getType().equals(PacketType.USERNAME)) {
                         // String was passed : it's the username
                         clientUsername = (String) received.getMsg();
-                        if (clientUsername.equals("") || clientUsername == null) {
-                            disconnect = true;
-                            break;
-                        }
-
+                        
                         synchronized (USERNAMES) {
-                            if (!USERNAMES.contains(clientUsername)) {
+                            if (clientUsername.equals("") || clientUsername == null || USERNAMES.contains(clientUsername)) {
+                                if (USERNAMES.contains(clientUsername)) {
+                                    String msg = "Username is already selected. Choose another.";
+
+                                    if (DEBUG_MODE) {
+                                        System.out.println(String.format(" Received username : '%1$s'. Already selected.",
+                                                clientUsername));
+                                    }
+
+                                    // Send a 'USERNAME_ACK' with 'false' as value -> means given username was not accepted
+                                    SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, false, msg);
+                                    out.writeObject(packet);
+                                }
+                                else {
+                                    String msg = "Username is not valid (Blank usernames are not accepted). Choose another.";
+                                    SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, false, msg);
+                                    out.writeObject(packet);
+                                }
+                            }
+                            else {
                                 // If the username is available, add it to the list
                                 USERNAMES.add(clientUsername);
+
+                                // Send packet to acknowledge the given username
+                                SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, true);
+                                out.writeObject(packet);
 
                                 if (DEBUG_MODE) {
                                     System.out.println(String.format(" Received username : '%1$s'. Added to the list.",
                                             clientUsername));
                                 }
                                 break;
-                            } else {
-                                String msg = "Username is already selected. Choose another.";
-
-                                if (DEBUG_MODE) {
-                                    System.out.println(String.format(" Received username : '%1$s'. Already selected.",
-                                            clientUsername));
-                                }
-
-                                SocketPacket packet = new SocketPacket(PacketType.ALERT, msg);
-                                out.writeObject(packet);
                             }
                         }
                     } else if (received.getType().equals(PacketType.DISCONNECT)) {
+                        // Client wants to disconnect. Stop the identification loop
                         CLIENTS_STREAMS.remove(out);
                         disconnect = true;
                         break;
@@ -172,34 +197,25 @@ public class TheBoardServer extends Thread {
 
                 if (disconnect) {
                     if (DEBUG_MODE) {
-                        System.out.println(String.format("Client is disconnected (No username. Socket closed."));
+                        System.out.println(String.format("Client is disconnected (No username). Socket closed."));
                     }
                     clientSocket.close();
                     return;
                 }
 
-                // New client's username has been added, broadcast the updated list 
+                // New client's username has been added, broadcast the updated list. 
                 SocketPacket usernamesList = new SocketPacket(PacketType.LIST, USERNAMES);
                 broadcast(usernamesList);
 
                 if (DEBUG_MODE) {
                     System.out.println(String.format(" List of usernames sent to client '%1$s'.", clientUsername));
-                    System.out.println(String.format("  Getting drawing input from client '%1$s' and broadcasting it..", clientUsername));
+                    System.out.println(String.format("  Getting input from client '%1$s' and broadcasting it..", clientUsername));
                 }
 
-                // Get draw inputs and broadcast them to all clients. 
+                // 2nd loop : receive packet from client, broadcast it to all the clients, until DISCONNECT packet is received.
                 while ((received = (SocketPacket) in.readObject()) != null) {
-                    if (received.getType().equals(PacketType.DRAW_INPUT)) {
-                        // Send it to all the other clients
-                        broadcast(received);
-
-                        /*
-                        if (DEBUG_MODE) {
-                            System.out.println("  Drawing input received from '" + clientUsername + "' and passed to all the clients");
-                        }
-                         */
-                    } else if (received.getType().equals(PacketType.DISCONNECT)) {
-                        // The clients wants to disconnect. Acknowledge it by removing him from current users. 
+                    if (received.getType().equals(PacketType.DISCONNECT)) {
+                        // The client wants to disconnect. Acknowledge it by removing him from current users. 
                         USERNAMES.remove(clientUsername);
                         CLIENTS_STREAMS.remove(out);
 
@@ -208,8 +224,11 @@ public class TheBoardServer extends Thread {
                         broadcast(newList);
 
                         break;
-
+                    } else {
+                        // The client sent either a draw input or a chat message. Broadcast it.
+                        broadcast(received);
                     }
+                    
                 }
                 if (DEBUG_MODE) {
                     System.out.println(String.format("Client '%1$s' has disconnected. Socket closed.", clientUsername));

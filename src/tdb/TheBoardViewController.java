@@ -181,12 +181,10 @@ public class TheBoardViewController implements Initializable {
         graphicsContext.setLineWidth(lineWidth);
         graphicsContext.lineTo(event.getX(), event.getY());
         graphicsContext.stroke();
-        
-        DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
-        
-        
-        //command.doIt(graphicsContext);
 
+        DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
+
+        //command.doIt(graphicsContext);
         if (tbClient != null) {
             tbClient.sendCommand(command);
         }
@@ -216,7 +214,7 @@ public class TheBoardViewController implements Initializable {
         double lineWidth = Double.parseDouble(sizeTextField.getText());
         graphicsContext.beginPath();
         graphicsContext.moveTo(event.getX(), event.getY());
-        
+
         DrawCommand command = new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth);
         //command.doIt(graphicsContext);
         if (tbClient != null) {
@@ -266,26 +264,43 @@ public class TheBoardViewController implements Initializable {
         }
 
         if (tbClient != null) {
-            // Ask for username
-            dialog = new TextInputDialog();
-            dialog.setTitle("Username selection");
-            dialog.setHeaderText(null);
-            dialog.setContentText("Please select a username : ");
-            result = dialog.showAndWait();
-            if (result.isPresent()) {
-                tbClient.sendUsername(result.get());
-                connectButton.setDisable(true);
-                drawCanvas.setDisable(false);
-                TheDrawingBoard.setBoardClient(tbClient);
-            } else {
-                if (tbClient != null) {
-                    // Disconnect. 
+            while (!tbClient.isUserAck()) {
+                // Ask for username
+                dialog = new TextInputDialog();
+                dialog.setTitle("Username selection");
+                dialog.setHeaderText(null);
+                dialog.setContentText("Please select a username : ");
+                result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    tbClient.sendUsername(result.get());
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(TheBoardViewController.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    // User canceled name selection -> Disconnect. 
                     tbClient.disconnect();
                     tbClient = null;
                     TheDrawingBoard.setBoardClient(null);
+                    return;
+                }
+                if (!tbClient.isUserAck() && tbClient.getUserAckMessage() != null) {
+                    // If username was not acknowledged, display the reason why
+                    Alert alert = new Alert(AlertType.ERROR);
+                    alert.setTitle("Username not valid");
+                    alert.setHeaderText(null);
+                    alert.setContentText(tbClient.getUserAckMessage());
+                    alert.showAndWait();
                 }
 
             }
+
+            // User selected a valid name -> Connection and ID to server is complete. 
+            connectButton.setDisable(true);
+            drawCanvas.setDisable(false);
+            TheDrawingBoard.setBoardClient(tbClient);
+
         }
     }
 }

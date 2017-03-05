@@ -21,7 +21,7 @@ import javafx.scene.canvas.GraphicsContext;
 import tdb.TheDrawingBoard;
 
 /**
- *
+ * Defines the client-side operations for 'The Board' game mode. 
  * @author cheikh
  */
 public class TheBoardClient {
@@ -32,6 +32,8 @@ public class TheBoardClient {
     private static int port;
     private static GraphicsContext gc;
     private static ObservableList<String> users;
+    private boolean userAck = false;
+    private String userAckMessage = null;
 
     public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList) throws UnknownHostException, IOException {
 
@@ -46,8 +48,9 @@ public class TheBoardClient {
     }
 
     /**
-     * Starts the receiving thread. Receives drawing commands from the server
-     * and executes them with the current GraphicsContext
+     * Starts the receiving thread. Receives different types of packets from server
+     * and acts accordingly (Drawing commands, usernames list, chat messages, etc.).
+     * Note : it is necessary to use the Platform.runLater construction when updating GUI components
      */
     public void startReceiveThread() {
 
@@ -58,33 +61,37 @@ public class TheBoardClient {
                     SocketPacket received = null;
                     while (true) {
                         received = (SocketPacket) input.readObject();
-                        // If the received packet is a draw input, execute it. 
-                        if (received.getType().equals(PacketType.DRAW_INPUT)) {
-                            DrawCommand command = (DrawCommand) received.getObject();
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    command.doIt(gc);
+       
+                        switch (received.getType()) {
+                            case DRAW_INPUT:
+                                // Execute the draw command with the current GraphicsContext (gc)
+                                DrawCommand command = (DrawCommand) received.getObject();
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        command.doIt(gc);
+                                    }
                                 }
-                            }
-                            );
-                            
-                        } else if (received.getType().equals(PacketType.LIST)) {
-                            
-                            // It could be the list of usernames too, in that case just update it.
-                            List<String> list = (List<String>) received.getObject();
-                            for (String user : list) {
-                                System.out.print(user + " | ");
-                            }
-                                
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    users.clear();
-                                    users.addAll(list);
+                                );  break;
+                            case LIST:
+                                // List of usernames, update it. 
+                                List<String> list = (List<String>) received.getObject();
+                                for (String user : list) {
+                                    System.out.print(user + " | ");
+                                }   Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        users.clear();
+                                        users.addAll(list);
+                                    }
                                 }
-                            }
-                            );
+                                );  break;
+                            case USERNAME_ACK:
+                                userAck = (boolean) received.getObject();
+                                userAckMessage = received.getMsg();
+                                break;
+                            default:
+                                break;
                         }
                     }
                 } catch (EOFException e) {
@@ -130,10 +137,6 @@ public class TheBoardClient {
         }
     }
 
-    public List<String> getUsers() {
-        return users;
-    }
-
     public void disconnect() {
         if (socket != null && input != null && output != null) {
             try {
@@ -147,5 +150,16 @@ public class TheBoardClient {
 
         }
     }
+
+    public boolean isUserAck() {
+        return userAck;
+    }
+
+    public String getUserAckMessage() {
+        return userAckMessage;
+    }
+    
+    
+    
 
 }

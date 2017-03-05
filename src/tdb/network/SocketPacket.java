@@ -22,7 +22,7 @@ public class SocketPacket implements Serializable {
 
     public SocketPacket(PacketType type, Object obj) {
         this.type = type;
-        object = obj;
+        this.object = obj;
         if (obj instanceof String) {
             msg = (String) obj;
         }
@@ -30,6 +30,12 @@ public class SocketPacket implements Serializable {
             msg = null;
         }
     }
+    
+    public SocketPacket(PacketType type, Object obj, String detail) {
+        this.type = type;
+        this.object = obj;
+        this.msg = detail;
+    } 
 
     public PacketType getType() {
         return type;
