@@ -101,7 +101,7 @@ public class Utilities {
     }
     
     public static void setEraserCursor(Canvas canvas) {
-        Image image = new Image(new File("src/tdb/images/circle-cursor.png").toURI().toString());
+        Image image = new Image(new File("../src/tdb/images/circle-cursor.png").toURI().toString());
             ImageCursor cursor = new ImageCursor(image,
                     image.getWidth() / 2,
                     image.getHeight() / 2);
@@ -110,7 +110,7 @@ public class Utilities {
     }
     
     public static void setForbiddenCursor(Canvas canvas) {
-        Image image = new Image(new File("src/tdb/images/forbidden-icon.png").toURI().toString());
+        Image image = new Image(new File("../src/tdb/images/forbidden-icon.png").toURI().toString());
             ImageCursor cursor = new ImageCursor(image,
                     image.getWidth() / 2,
                     image.getHeight() / 2);
