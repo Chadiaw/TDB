@@ -213,13 +213,8 @@ public class TheBoardServer extends Thread {
                 OUTER:
                 // 2nd loop : receive packets from clients and process them accordingly.
                 while (true) {
-                    
-                    // Clear everyone for drawing, when nothing is received (No one is drawing).
-                    SocketPacket clear = new SocketPacket(PacketType.CLEAR_TO_DRAW, true);
-                    broadcast(clear);
-                    
                     received = (SocketPacket) in.readObject();
-                    
+
                     switch (received.getType()) {
                         case DISCONNECT:
                             // The client wants to disconnect. Acknowledge it by removing him from current users.
@@ -239,10 +234,14 @@ public class TheBoardServer extends Thread {
                             // Send to everyone the actual drawing input.
                             broadcast(received);
                             break;
+                        case CLEAR_TO_DRAW:
+                            // Client sent a clear to draw, broadcast it.
+                            broadcast(received);
+                            break;
                         default:
                             break;
                     }
-                    
+
                 }
                 if (DEBUG_MODE) {
                     System.out.println(String.format("Client '%1$s' has disconnected. Socket closed.", clientUsername));

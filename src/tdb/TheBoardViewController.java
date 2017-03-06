@@ -180,6 +180,7 @@ public class TheBoardViewController implements Initializable {
         } else {
             Utilities.setEraserCursor(drawCanvas);
         }
+        tbClient.sendClearToDraw(true);
     }
 
     @FXML
@@ -300,7 +301,7 @@ public class TheBoardViewController implements Initializable {
                     username = result.get();
                     tbClient.sendUsername(username);
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep(1000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(TheBoardViewController.class.getName()).log(Level.SEVERE, null, ex);
                     }
