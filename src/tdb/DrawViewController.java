@@ -12,6 +12,7 @@ package tdb;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,21 +70,42 @@ public class DrawViewController implements Initializable {
     Canvas drawCanvas;
 
     GraphicsContext graphicsContext;
+    ArrayList<String> chosenWords;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         sizeTextField.setText("10.0");
         sizeTextField.setEditable(false);
-        wordLabel.setText("ARROW");
         colorPicker.setValue(Color.ORANGE);
+
+        wordLabel.setText(WordsManager.getRandomWord("EN"));
+        chosenWords = new ArrayList<String>();
+        chosenWords.add(wordLabel.getText());
+
         graphicsContext = drawCanvas.getGraphicsContext2D();
         Utilities.initDraw(graphicsContext);
         getCurrentValues();
 
     }
-    
+
+    public void resetWord(ActionEvent event) {
+        String newWord = WordsManager.getRandomWord("EN"); // Get new random word
+
+        // Almost every word in the list has been chosen, reset the list.
+        if (chosenWords.size() > WordsManager.getWordsCount("EN") - 2) {
+            chosenWords.clear();
+        }
+
+        // This loop makes sure no words are repeated, until the whole list is used. 
+        while (chosenWords.contains(newWord)) {
+            newWord = WordsManager.getRandomWord("EN");
+        }
+        wordLabel.setText(newWord);
+        chosenWords.add(newWord);
+    }
+
     /**
-     * Set the graphicsContext color and line width to the current values 
+     * Set the graphicsContext color and line width to the current values
      */
     private void getCurrentValues() {
         graphicsContext.setStroke(colorPicker.getValue());
@@ -113,8 +135,8 @@ public class DrawViewController implements Initializable {
         if (eraserToggle.isSelected()) {
             Image image = new Image(new File("src/tdb/images/circle-cursor.png").toURI().toString());
             ImageCursor cursor = new ImageCursor(image,
-                                image.getWidth() / 2,
-                                image.getHeight() /2);
+                    image.getWidth() / 2,
+                    image.getHeight() / 2);
 
             drawCanvas.getScene().setCursor(cursor);
         } else {
@@ -128,7 +150,7 @@ public class DrawViewController implements Initializable {
 
     public void clickPanelAction(MouseEvent event) {
         double lineWidth = Double.parseDouble(sizeTextField.getText());
-        new StartLine(event.getX(), event.getY(), colorPicker.getValue(),lineWidth).doIt(graphicsContext);
+        new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth).doIt(graphicsContext);
     }
 
     public void dragOnPanelAction(MouseEvent event) {
@@ -138,7 +160,7 @@ public class DrawViewController implements Initializable {
             drawColor = colorPicker.getValue();
 
         } else {
-           drawColor = Color.WHITE;
+            drawColor = Color.WHITE;
         }
 
         // Get the line width from the text field
@@ -148,7 +170,7 @@ public class DrawViewController implements Initializable {
         } catch (NumberFormatException e) {
             sizeTextField.setText("1.0");
         }
-        
+
         new AddToLine(event.getX(), event.getY(), drawColor, lineWidth).doIt(graphicsContext);
     }
 
