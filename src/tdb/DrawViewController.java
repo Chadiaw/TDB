@@ -71,18 +71,41 @@ public class DrawViewController implements Initializable {
     Canvas drawCanvas;
 
     GraphicsContext graphicsContext;
+    
+    ArrayList<String> chosenWords;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        // Initialize the different controls.
         sizeTextField.setText("10.0");
         sizeTextField.setEditable(false);
-        wordLabel.setText("ARROW");
         colorPicker.setValue(Color.ORANGE);
+        
+        wordLabel.setText(WordsManager.getRandomWord("EN"));
+        chosenWords = new ArrayList<String>();
+        chosenWords.add(wordLabel.getText());
+        
         graphicsContext = drawCanvas.getGraphicsContext2D();
         initDraw(graphicsContext);
 
     }
 
+    public void resetWord(ActionEvent event) {
+        String newWord = WordsManager.getRandomWord("EN"); // Get new random word
+        
+        // Almost every word in the list has been chosen, reset the list.
+        if(chosenWords.size() > WordsManager.getWordsCount("EN") - 2) {
+            chosenWords.clear();
+        }
+        
+        // This loop makes sure no words are repeated, until the whole list is used. 
+        while(chosenWords.contains(newWord)) {
+            newWord = WordsManager.getRandomWord("EN");
+        }
+        wordLabel.setText(newWord);
+        chosenWords.add(newWord);
+    }
+    
     public void homeScreen(ActionEvent event) {
         // Close this view
         Stage stage = (Stage) homeButton.getScene().getWindow();
@@ -94,7 +117,7 @@ public class DrawViewController implements Initializable {
         } catch (IOException ex) {
             Logger.getLogger(DrawViewController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        letterModule letter = new letterModule();
+        WordsManager letter = new WordsManager();
         ArrayList<String> words =letter.letterReader();
         letter.RandWord(words);
         // afficher le mot sur la vue du tableau de dessin
