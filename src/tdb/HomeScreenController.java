@@ -52,7 +52,7 @@ public class HomeScreenController implements Initializable {
         
         // Open Draw View
         try {
-            ViewManager.getInstance().openView("DrawView.fxml", "Solo Mode", StageStyle.UTILITY);
+            ViewManager.getInstance().openView("DrawView.fxml", "Solo Mode", StageStyle.DECORATED);
         } catch (IOException ex) {
             Logger.getLogger(HomeScreenController.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -73,7 +73,7 @@ public class HomeScreenController implements Initializable {
         
         // Open The Board View
         try {
-            ViewManager.getInstance().openView("TheBoardView.fxml", "The Board", StageStyle.UTILITY);
+            ViewManager.getInstance().openView("TheBoardView.fxml", "The Board", StageStyle.DECORATED);
         } catch (IOException ex) {
             Logger.getLogger(HomeScreenController.class.getName()).log(Level.SEVERE, null, ex);
         }
