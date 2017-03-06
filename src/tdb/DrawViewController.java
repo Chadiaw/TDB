@@ -9,7 +9,6 @@ package tdb;
  *
  * @author cheikh
  */
-import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -17,7 +16,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
-import javafx.scene.ImageCursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
@@ -25,7 +23,6 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
@@ -123,12 +120,7 @@ public class DrawViewController implements Initializable {
 
     public void enterPanel(MouseEvent event) {
         if (eraserToggle.isSelected()) {
-            Image image = new Image(new File("src/tdb/images/circle-cursor.png").toURI().toString());
-            ImageCursor cursor = new ImageCursor(image,
-                    image.getWidth() / 2,
-                    image.getHeight() / 2);
-
-            drawCanvas.getScene().setCursor(cursor);
+            Utilities.setEraserCursor(drawCanvas);
         } else {
             drawCanvas.getScene().setCursor(Cursor.DEFAULT);
         }
