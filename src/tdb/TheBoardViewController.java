@@ -297,7 +297,7 @@ public class TheBoardViewController implements Initializable {
                     username = result.get();
                     tbClient.sendUsername(username);
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(400);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(TheBoardViewController.class.getName()).log(Level.SEVERE, null, ex);
                     }
