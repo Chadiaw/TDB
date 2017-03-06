@@ -206,7 +206,6 @@ public class TheBoardViewController implements Initializable {
 
         DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
 
-        //command.doIt(graphicsContext);
         if (tbClient != null) {
             tbClient.sendCommand(command);
         }
@@ -238,7 +237,7 @@ public class TheBoardViewController implements Initializable {
         graphicsContext.moveTo(event.getX(), event.getY());
 
         DrawCommand command = new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth);
-        //command.doIt(graphicsContext);
+        
         if (tbClient != null) {
             tbClient.sendCommand(command);
         }

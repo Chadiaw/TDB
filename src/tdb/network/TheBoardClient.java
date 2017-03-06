@@ -73,7 +73,9 @@ public class TheBoardClient {
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                        command.doIt(gc);
+                                        synchronized(gc) {
+                                            command.doIt(gc);
+                                        }
                                     }
                                 }
                                 );  break;
