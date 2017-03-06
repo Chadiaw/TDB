@@ -180,7 +180,8 @@ public class TheBoardViewController implements Initializable {
         } else {
             Utilities.setEraserCursor(drawCanvas);
         }
-        tbClient.sendClearToDraw(true);
+        if(tbClient.isClearToDraw())
+            tbClient.sendClearToDraw(true);
     }
 
     @FXML

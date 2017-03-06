@@ -164,9 +164,12 @@ public class TheBoardClient {
     public void sendClearToDraw(boolean value) {
         if (socket != null && input != null && output != null) {
             try {
+                Thread.sleep(100); // Small delay before sending the clear to draw (debounce)
                 SocketPacket packet = new SocketPacket(PacketType.CLEAR_TO_DRAW, value);
                 output.writeObject(packet);
             } catch (IOException ex) {
+                Logger.getLogger(TheBoardClient.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex) {
                 Logger.getLogger(TheBoardClient.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
