@@ -151,7 +151,7 @@ public class TheBoardServer extends Thread {
                     if (received.getType().equals(PacketType.USERNAME)) {
                         // String was passed : it's the username
                         clientUsername = (String) received.getMsg();
-                        
+
                         synchronized (USERNAMES) {
                             if (clientUsername.equals("") || clientUsername == null || USERNAMES.contains(clientUsername)) {
                                 if (USERNAMES.contains(clientUsername)) {
@@ -165,14 +165,12 @@ public class TheBoardServer extends Thread {
                                     // Send a 'USERNAME_ACK' with 'false' as value -> means given username was not accepted
                                     SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, false, msg);
                                     out.writeObject(packet);
-                                }
-                                else {
+                                } else {
                                     String msg = "Username is not valid (Blank usernames are not accepted). Choose another.";
                                     SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, false, msg);
                                     out.writeObject(packet);
                                 }
-                            }
-                            else {
+                            } else {
                                 // If the username is available, add it to the list
                                 USERNAMES.add(clientUsername);
 
@@ -212,21 +210,37 @@ public class TheBoardServer extends Thread {
                     System.out.println(String.format("  Getting input from client '%1$s' and broadcasting it..", clientUsername));
                 }
 
-                // 2nd loop : receive packet from client, broadcast it to all the clients, until DISCONNECT packet is received.
-                while ((received = (SocketPacket) in.readObject()) != null) {
-                    if (received.getType().equals(PacketType.DISCONNECT)) {
-                        // The client wants to disconnect. Acknowledge it by removing him from current users. 
-                        USERNAMES.remove(clientUsername);
-                        CLIENTS_STREAMS.remove(out);
-
-                        // Send updated list to the other clients before closing out the socket.
-                        SocketPacket newList = new SocketPacket(PacketType.LIST, USERNAMES);
-                        broadcast(newList);
-
-                        break;
-                    } else {
-                        // The client sent either a draw input or a chat message. Broadcast it.
-                        broadcast(received);
+                OUTER:
+                // 2nd loop : receive packets from clients and process them accordingly.
+                while (true) {
+                    
+                    // Clear everyone for drawing, when nothing is received (No one is drawing).
+                    SocketPacket clear = new SocketPacket(PacketType.CLEAR_TO_DRAW, true);
+                    broadcast(clear);
+                    
+                    received = (SocketPacket) in.readObject();
+                    
+                    switch (received.getType()) {
+                        case DISCONNECT:
+                            // The client wants to disconnect. Acknowledge it by removing him from current users.
+                            USERNAMES.remove(clientUsername);
+                            CLIENTS_STREAMS.remove(out);
+                            // Send updated list to the other clients before closing out the socket.
+                            SocketPacket newList = new SocketPacket(PacketType.LIST, USERNAMES);
+                            broadcast(newList);
+                            break OUTER;
+                        case MESSAGE:
+                            broadcast(received);
+                            break;
+                        case DRAW_INPUT:
+                            // Forbid everyone else from drawing while this client is (PANEL IS BUSY)
+                            SocketPacket busy = new SocketPacket(PacketType.CLEAR_TO_DRAW, false);
+                            broadcastExcept(busy, out);
+                            // Send to everyone the actual drawing input.
+                            broadcast(received);
+                            break;
+                        default:
+                            break;
                     }
                     
                 }
@@ -254,6 +268,31 @@ public class TheBoardServer extends Thread {
                 while (i.hasNext()) {
                     try {
                         output = i.next();
+                        output.writeObject(packet);
+                        output.reset();
+                    } catch (IOException ex) {
+                        Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Sends a SocketPacket to every client except the one specified.
+         *
+         * @param packet packet to send
+         * @param exception client to ignore
+         */
+        private void broadcastExcept(SocketPacket packet, ObjectOutputStream exception) {
+            synchronized (CLIENTS_STREAMS) {
+                Iterator<ObjectOutputStream> i = CLIENTS_STREAMS.iterator();
+                ObjectOutputStream output;
+                while (i.hasNext()) {
+                    try {
+                        output = i.next();
+                        if (output.equals(exception)) {
+                            continue;
+                        }
                         output.writeObject(packet);
                         output.reset();
                     } catch (IOException ex) {

@@ -5,7 +5,6 @@
  */
 package tdb;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
@@ -14,15 +13,12 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
-import javafx.scene.ImageCursor;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
@@ -36,7 +32,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import tdb.network.TheBoardClient;
@@ -101,6 +96,7 @@ public class TheBoardViewController implements Initializable {
         wordLabel.setText("THE BOARD");
         colorPicker.setValue(Color.AQUAMARINE);
         graphicsContext = drawCanvas.getGraphicsContext2D();
+
         Utilities.initDraw(graphicsContext);
         getCurrentValues();
         drawCanvas.setDisable(true);
@@ -179,36 +175,45 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private void releaseOnPanelAction(MouseEvent event) {
+        if (!eraserToggle.isSelected()) {
+            drawCanvas.getScene().setCursor(Cursor.DEFAULT);
+        } else {
+            Utilities.setEraserCursor(drawCanvas);
+        }
     }
 
     @FXML
     private void dragOnPanelAction(MouseEvent event) {
-        Color drawColor;
-        if (!eraserToggle.isSelected()) {
-            // Eraser not toggled : get the drawing color from the picker
-            drawColor = colorPicker.getValue();
-        } else {
-            drawColor = Color.WHITE;
-        }
+        if (tbClient.isClearToDraw()) {
+            Color drawColor;
+            if (!eraserToggle.isSelected()) {
+                // Eraser not toggled : get the drawing color from the picker
+                drawColor = colorPicker.getValue();
+            } else {
+                drawColor = Color.WHITE;
+            }
 
-        // Get the line width from the text field
-        double lineWidth = 1.0;
-        try {
-            lineWidth = Double.parseDouble(sizeTextField.getText());
-        } catch (NumberFormatException e) {
-            sizeTextField.setText("1.0");
-        }
+            // Get the line width from the text field
+            double lineWidth = 1.0;
+            try {
+                lineWidth = Double.parseDouble(sizeTextField.getText());
+            } catch (NumberFormatException e) {
+                sizeTextField.setText("1.0");
+            }
 
-        graphicsContext.setStroke(drawColor);
-        graphicsContext.setLineWidth(lineWidth);
-        graphicsContext.lineTo(event.getX(), event.getY());
-        graphicsContext.stroke();
+            graphicsContext.setStroke(drawColor);
+            graphicsContext.setLineWidth(lineWidth);
+            graphicsContext.lineTo(event.getX(), event.getY());
+            graphicsContext.stroke();
 
-        DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
-
-        if (tbClient != null) {
+            DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
             tbClient.sendCommand(command);
+
+        } else {
+            // Not cleared to draw (Panel is busy). Change cursor to forbidden.
+            Utilities.setForbiddenCursor(drawCanvas);
         }
+
     }
 
     @FXML
@@ -219,12 +224,7 @@ public class TheBoardViewController implements Initializable {
     @FXML
     private void enterPanel(MouseEvent event) {
         if (eraserToggle.isSelected()) {
-            Image image = new Image(new File("src/tdb/images/circle-cursor.png").toURI().toString());
-            ImageCursor cursor = new ImageCursor(image,
-                    image.getWidth() / 2,
-                    image.getHeight() / 2);
-
-            drawCanvas.getScene().setCursor(cursor);
+            Utilities.setEraserCursor(drawCanvas);
         } else {
             drawCanvas.getScene().setCursor(Cursor.DEFAULT);
         }
@@ -232,15 +232,19 @@ public class TheBoardViewController implements Initializable {
 
     @FXML
     private void clickPanelAction(MouseEvent event) {
-        double lineWidth = Double.parseDouble(sizeTextField.getText());
-        graphicsContext.beginPath();
-        graphicsContext.moveTo(event.getX(), event.getY());
+        if (tbClient.isClearToDraw()) {
+            double lineWidth = Double.parseDouble(sizeTextField.getText());
+            graphicsContext.beginPath();
+            graphicsContext.moveTo(event.getX(), event.getY());
 
-        DrawCommand command = new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth);
-        
-        if (tbClient != null) {
+            DrawCommand command = new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth);
             tbClient.sendCommand(command);
+
+        } else {
+            // Not clear to draw. Change cursor to forbidden
+            Utilities.setForbiddenCursor(drawCanvas);
         }
+
     }
 
     @FXML
@@ -296,7 +300,7 @@ public class TheBoardViewController implements Initializable {
                     username = result.get();
                     tbClient.sendUsername(username);
                     try {
-                        Thread.sleep(400);
+                        Thread.sleep(500);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(TheBoardViewController.class.getName()).log(Level.SEVERE, null, ex);
                     }

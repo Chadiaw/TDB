@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
-import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import tdb.DrawCommand;
 import javafx.scene.canvas.GraphicsContext;
@@ -23,7 +22,8 @@ import javafx.scene.control.TextArea;
 import tdb.TheDrawingBoard;
 
 /**
- * Defines the client-side operations for 'The Board' game mode. 
+ * Defines the client-side operations for 'The Board' game mode.
+ *
  * @author cheikh
  */
 public class TheBoardClient {
@@ -37,6 +37,7 @@ public class TheBoardClient {
     private boolean userAck = false;
     private String userAckMessage = null;
     private TextArea chatData;
+    private boolean clearToDraw = true;
 
     public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList, TextArea chatData) throws UnknownHostException, IOException {
 
@@ -52,9 +53,10 @@ public class TheBoardClient {
     }
 
     /**
-     * Starts the receiving thread. Receives different types of packets from server
-     * and acts accordingly (Drawing commands, usernames list, chat messages, etc.).
-     * Note : it is necessary to use the Platform.runLater construction when updating GUI components
+     * Starts the receiving thread. Receives different types of packets from
+     * server and acts accordingly (Drawing commands, usernames list, chat
+     * messages, etc.). Note : it is necessary to use the Platform.runLater
+     * construction when updating GUI components
      */
     public void startReceiveThread() {
 
@@ -65,7 +67,7 @@ public class TheBoardClient {
                     SocketPacket received = null;
                     while (true) {
                         received = (SocketPacket) input.readObject();
-       
+
                         switch (received.getType()) {
                             case DRAW_INPUT:
                                 // Execute the draw command with the current GraphicsContext (gc)
@@ -73,25 +75,23 @@ public class TheBoardClient {
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                        synchronized(gc) {
-                                            command.doIt(gc);
-                                        }
+                                        command.doIt(gc);
                                     }
                                 }
-                                );  break;
+                                );
+                                break;
                             case LIST:
                                 // List of usernames, update it. 
                                 List<String> list = (List<String>) received.getObject();
-                                for (String user : list) {
-                                    System.out.print(user + " | ");
-                                }   Platform.runLater(new Runnable() {
+                                Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
                                         users.clear();
                                         users.addAll(list);
                                     }
                                 }
-                                );  break;
+                                );
+                                break;
                             case USERNAME_ACK:
                                 userAck = (boolean) received.getObject();
                                 userAckMessage = received.getMsg();
@@ -99,6 +99,9 @@ public class TheBoardClient {
                             case MESSAGE:
                                 String message = (String) received.getObject();
                                 chatData.appendText("\n" + message);
+                                break;
+                            case CLEAR_TO_DRAW:
+                                clearToDraw = (boolean) received.getObject();
                                 break;
                             default:
                                 break;
@@ -146,13 +149,13 @@ public class TheBoardClient {
             }
         }
     }
-    
+
     public void sendMessage(String message) {
         if (socket != null && input != null && output != null) {
             try {
                 SocketPacket packet = new SocketPacket(PacketType.MESSAGE, message);
                 output.writeObject(packet);
-            } catch(IOException ex) {
+            } catch (IOException ex) {
                 Logger.getLogger(TheBoardClient.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -179,8 +182,9 @@ public class TheBoardClient {
     public String getUserAckMessage() {
         return userAckMessage;
     }
-    
-    
-    
+
+    public boolean isClearToDraw() {
+        return clearToDraw;
+    }
 
 }

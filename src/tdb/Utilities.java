@@ -10,11 +10,13 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.ImageCursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -97,4 +99,23 @@ public class Utilities {
                 canvasHeight);  //height of the rectangle
 
     }
+    
+    public static void setEraserCursor(Canvas canvas) {
+        Image image = new Image(new File("src/tdb/images/circle-cursor.png").toURI().toString());
+            ImageCursor cursor = new ImageCursor(image,
+                    image.getWidth() / 2,
+                    image.getHeight() / 2);
+
+            canvas.getScene().setCursor(cursor);
+    }
+    
+    public static void setForbiddenCursor(Canvas canvas) {
+        Image image = new Image(new File("src/tdb/images/forbidden-icon.png").toURI().toString());
+            ImageCursor cursor = new ImageCursor(image,
+                    image.getWidth() / 2,
+                    image.getHeight() / 2);
+
+            canvas.getScene().setCursor(cursor);
+    }
+            
 }
