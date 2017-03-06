@@ -60,6 +60,7 @@ public class WordsManager {
             "Ghost",
             "Giraffe",
             "Grapes",
+            "Guitar",
             "Hand",
             "Hat",
             "Heart",

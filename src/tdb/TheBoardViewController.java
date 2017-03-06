@@ -14,6 +14,8 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -26,19 +28,17 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import tdb.network.TheBoardClient;
 
 /**
@@ -77,6 +77,13 @@ public class TheBoardViewController implements Initializable {
     private Button connectButton;
 
     @FXML
+    private TextArea chatOutput;
+    String username;
+
+    @FXML
+    private TextField chatInput;
+
+    @FXML
     private ListView<String> usersList;
     ObservableList<String> items = FXCollections.observableArrayList();
 
@@ -111,6 +118,13 @@ public class TheBoardViewController implements Initializable {
                 }
             }
         });
+
+        // Set up chat
+        chatOutput.setEditable(false);
+        chatOutput.setWrapText(true); // Disable horizontal scollbar
+        chatOutput.setDisable(true);
+        chatInput.setDisable(true);
+
     }
 
     /**
@@ -119,6 +133,14 @@ public class TheBoardViewController implements Initializable {
     private void getCurrentValues() {
         graphicsContext.setStroke(colorPicker.getValue());
         graphicsContext.setLineWidth(Double.parseDouble(sizeTextField.getText()));
+    }
+
+    @FXML
+    private void sendMessage(ActionEvent event) {
+        if (tbClient != null && !chatInput.getText().isEmpty()) {
+            tbClient.sendMessage(username + ": " + chatInput.getText());
+            chatInput.clear();
+        }
     }
 
     @FXML
@@ -245,7 +267,7 @@ public class TheBoardViewController implements Initializable {
         }
 
         try {
-            tbClient = new TheBoardClient(host, graphicsContext, items);
+            tbClient = new TheBoardClient(host, graphicsContext, items, chatOutput);
             tbClient.startReceiveThread();
         } catch (UnknownHostException ex) {
             Alert alert = new Alert(AlertType.ERROR);
@@ -272,7 +294,8 @@ public class TheBoardViewController implements Initializable {
                 dialog.setContentText("Please select a username : ");
                 result = dialog.showAndWait();
                 if (result.isPresent()) {
-                    tbClient.sendUsername(result.get());
+                    username = result.get();
+                    tbClient.sendUsername(username);
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException ex) {
@@ -293,12 +316,13 @@ public class TheBoardViewController implements Initializable {
                     alert.setContentText(tbClient.getUserAckMessage());
                     alert.showAndWait();
                 }
-
             }
 
             // User selected a valid name -> Connection and ID to server is complete. 
             connectButton.setDisable(true);
             drawCanvas.setDisable(false);
+            chatOutput.setDisable(false);
+            chatInput.setDisable(false);
             TheDrawingBoard.setBoardClient(tbClient);
 
         }

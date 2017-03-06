@@ -15,9 +15,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import tdb.DrawCommand;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.TextArea;
 import tdb.TheDrawingBoard;
 
 /**
@@ -34,8 +36,9 @@ public class TheBoardClient {
     private static ObservableList<String> users;
     private boolean userAck = false;
     private String userAckMessage = null;
+    private TextArea chatData;
 
-    public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList) throws UnknownHostException, IOException {
+    public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList, TextArea chatData) throws UnknownHostException, IOException {
 
         port = TheBoardServer.listeningPort;
         socket = new Socket(hostname, port);
@@ -43,6 +46,7 @@ public class TheBoardClient {
         output.flush();
         input = new ObjectInputStream(socket.getInputStream());
         users = usersList;
+        this.chatData = chatData;
         this.gc = gc;
 
     }
@@ -90,6 +94,10 @@ public class TheBoardClient {
                                 userAck = (boolean) received.getObject();
                                 userAckMessage = received.getMsg();
                                 break;
+                            case MESSAGE:
+                                String message = (String) received.getObject();
+                                chatData.appendText("\n" + message);
+                                break;
                             default:
                                 break;
                         }
@@ -132,6 +140,17 @@ public class TheBoardClient {
                 SocketPacket packet = new SocketPacket(PacketType.USERNAME, username);
                 output.writeObject(packet);
             } catch (IOException ex) {
+                Logger.getLogger(TheBoardClient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public void sendMessage(String message) {
+        if (socket != null && input != null && output != null) {
+            try {
+                SocketPacket packet = new SocketPacket(PacketType.MESSAGE, message);
+                output.writeObject(packet);
+            } catch(IOException ex) {
                 Logger.getLogger(TheBoardClient.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
