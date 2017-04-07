@@ -1,0 +1,53 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 27-Mar-2017, 11:16:09 PM
+    Author     : cheikh
+*/
+
+
+#homeButton {
+  -fx-background-image: url("../images/home-icon.png");
+  -fx-background-size: 50 50;
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: center;
+}
+
+#saveButton {
+  -fx-background-image: url("../images/save-icon.png");
+  -fx-background-size: 100 100;
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: center;
+}
+
+#clearButton {
+  -fx-background-image: url("../images/clear-icon.png");
+  -fx-background-size: 20 20;
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: center;
+}
+
+#eraserToggle {
+  -fx-background-image: url("../images/eraser-icon.png");
+  -fx-background-size: 40 40;
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: center;
+}
+
+#resetWordButton {
+  -fx-background-image: url("../images/reset-icon.png");
+  -fx-background-size: 60 60;
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: center;
+}
+
+#wordLabel {
+    -fx-font-size: 22px;
+    -fx-font-family : "Century Schoolbook";
+    -fx-font-weight: bold;
+    -fx-text-fill: #fc7b5a;
+    -fx-effect: innershadow( three-pass-box , black, 1, 2.0 , 0 , 2 );
+}

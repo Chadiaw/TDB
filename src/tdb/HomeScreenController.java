@@ -41,7 +41,7 @@ public class HomeScreenController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         // TODO
         twoPlayersButton.setDisable(true);
-        multiplayerButton.setDisable(true);
+        
         
     }    
     
@@ -63,7 +63,16 @@ public class HomeScreenController implements Initializable {
     }
     
     public void goMultiplayerMode (ActionEvent event) {
+       // Close home screen
+        Stage stage = (Stage) multiplayerButton.getScene().getWindow();
+        stage.close();
         
+        // Open The Board View
+        try {
+            ViewManager.getInstance().openView("MultiplayerView.fxml", "The Drawing Board - Multiplayer", StageStyle.DECORATED);
+        } catch (IOException ex) {
+            Logger.getLogger(HomeScreenController.class.getName()).log(Level.SEVERE, null, ex);
+        } 
     }
     
     public void goBoardMode (ActionEvent event) {

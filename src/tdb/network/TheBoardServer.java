@@ -56,7 +56,6 @@ public class TheBoardServer extends Thread {
                 Logger.getLogger(TheBoardServer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-
     }
 
     /**
