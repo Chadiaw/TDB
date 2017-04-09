@@ -37,6 +37,7 @@ public class ViewManager {
         stage.setTitle(title);
         stage.setScene(new Scene(root1));
         stage.setResizable(false);
+        Utilities.setAppIcon(stage);
         stage.show();
     }
     
