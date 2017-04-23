@@ -5,10 +5,12 @@
  */
 package tdb;
 
+import java.io.File;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import tdb.network.TheBoardClient;
 import tdb.network.TheBoardServer;
@@ -32,7 +34,7 @@ public class TheDrawingBoard extends Application {
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();
-        
+        Utilities.setAppIcon(stage);
         boardServer = new TheBoardServer(4444, true);
         boardServer.start();
     }

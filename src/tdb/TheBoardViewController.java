@@ -257,12 +257,14 @@ public class TheBoardViewController implements Initializable {
         TextInputDialog dialog = new TextInputDialog("localhost");
         dialog.setTitle("Hostname");
         try {
-            dialog.setHeaderText(String.format("Your hostname (localhost) is : %1$s",
-                    InetAddress.getLocalHost()));
+            dialog.setHeaderText(String.format("Your hostname (localhost) is : %1$s \n"
+                    + "Your IP is : %2$s",
+                    InetAddress.getLocalHost().getHostName(), InetAddress.getLocalHost().getHostAddress()));
         } catch (UnknownHostException ex) {
             dialog.setHeaderText("Your IP (localhost) is : Unknown");
         }
         dialog.setContentText("Please enter the hostname to join : ");
+        Utilities.initDialogOwner(dialog, connectButton);
         Optional<String> result = dialog.showAndWait();
         if (result.isPresent()) {
             host = result.get();
@@ -279,6 +281,7 @@ public class TheBoardViewController implements Initializable {
             alert.setTitle("Connection error");
             alert.setHeaderText(null);
             alert.setContentText("Could not resolve the host. " + ex.getMessage());
+            Utilities.initDialogOwner(alert, connectButton);
             alert.showAndWait();
 
         } catch (IOException ex) {
@@ -286,6 +289,7 @@ public class TheBoardViewController implements Initializable {
             alert.setTitle("Connection error");
             alert.setHeaderText(null);
             alert.setContentText("Could not connect to server. " + ex.getMessage());
+            Utilities.initDialogOwner(alert, connectButton);
             alert.showAndWait();
 
         }
@@ -297,6 +301,7 @@ public class TheBoardViewController implements Initializable {
                 dialog.setTitle("Username selection");
                 dialog.setHeaderText(null);
                 dialog.setContentText("Please select a username : ");
+                Utilities.initDialogOwner(dialog, connectButton);
                 result = dialog.showAndWait();
                 if (result.isPresent()) {
                     username = result.get();
@@ -319,6 +324,7 @@ public class TheBoardViewController implements Initializable {
                     alert.setTitle("Username not valid");
                     alert.setHeaderText(null);
                     alert.setContentText(tbClient.getUserAckMessage());
+                    Utilities.initDialogOwner(alert, connectButton);
                     alert.showAndWait();
                 }
             }

@@ -15,6 +15,8 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Control;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
@@ -117,5 +119,13 @@ public class Utilities {
 
             canvas.getScene().setCursor(cursor);
     }
-            
+    
+    public static void setAppIcon(Stage stage) {
+        stage.getIcons().add(new Image(new File("../src/tdb/images/app-icon.png").toURI().toString()));
+    }
+    
+    public static void initDialogOwner(Dialog dialog, Control control) {
+       Stage stage = (Stage) control.getScene().getWindow(); control.getScene().getWindow();
+       dialog.initOwner(stage);
+    }
 }
