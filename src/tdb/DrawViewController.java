@@ -9,6 +9,10 @@ package tdb;
  *
  * @author cheikh
  */
+import tdb.model.AddToLine;
+import tdb.model.ClearDrawing;
+import tdb.model.StartLine;
+import tdb.model.WordsManager;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;

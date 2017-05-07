@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tdb;
+package tdb.model;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import javafx.collections.FXCollections;
 
 /**
  *

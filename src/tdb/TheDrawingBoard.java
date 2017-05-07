@@ -5,13 +5,14 @@
  */
 package tdb;
 
-import java.io.File;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import tdb.network.MultiplayerClient;
+import tdb.network.MultiplayerServer;
 import tdb.network.TheBoardClient;
 import tdb.network.TheBoardServer;
 
@@ -21,8 +22,11 @@ import tdb.network.TheBoardServer;
  */
 public class TheDrawingBoard extends Application {
     
-    private static TheBoardClient uniqueClient = null; 
+    private static TheBoardClient boardClient = null; 
+    private static MultiplayerClient multiplayerClient = null; 
+
     private TheBoardServer boardServer;
+    private static MultiplayerServer multiServer;
     
     @Override
     public void start(Stage stage) throws Exception {
@@ -48,15 +52,41 @@ public class TheDrawingBoard extends Application {
     
     @Override
     public void stop() {
-        if (uniqueClient != null) {
-            uniqueClient.disconnect();
+        if (boardClient != null) {
+            boardClient.disconnect();
         }
-        if (boardServer.isAlive())
+        if (boardServer.isAlive()) {
             boardServer.disconnect();
+        }
+        
+        if(multiServer != null) {
+            disconnectMultiplayerServer();
+        }
+        Platform.exit();
     }
     
     public static void setBoardClient(TheBoardClient client) {
-        uniqueClient = client;
+        boardClient = client;
+    }
+
+    public static void setMultiplayerClient(MultiplayerClient client) {
+        multiplayerClient = client;
+    }
+    
+    public static MultiplayerClient getMultiplayerClient() {
+        return multiplayerClient;
+    }
+    
+    public static void disconnectMultiplayerServer() {
+        if (multiServer.isAlive()) {
+            multiServer.sendDisconnectNotice();
+            multiServer.disconnect();
+        }
+    }
+    
+    public static void startMultiplayerServer() {
+        multiServer = new MultiplayerServer();
+        multiServer.start();
     }
     
 }

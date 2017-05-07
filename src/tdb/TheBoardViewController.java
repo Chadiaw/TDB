@@ -5,6 +5,10 @@
  */
 package tdb;
 
+import tdb.model.AddToLine;
+import tdb.model.DrawCommand;
+import tdb.model.StartLine;
+import tdb.model.ClearDrawing;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
@@ -306,10 +310,13 @@ public class TheBoardViewController implements Initializable {
                 if (result.isPresent()) {
                     username = result.get();
                     tbClient.sendUsername(username);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(TheBoardViewController.class.getName()).log(Level.SEVERE, null, ex);
+                    while(tbClient.getUserAckMessage().equals("")) {
+                        try {
+                            // Wait for server response
+                            Thread.sleep(500);
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(TheBoardViewController.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
                 } else {
                     // User canceled name selection -> Disconnect. 

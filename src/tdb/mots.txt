@@ -1,8 +1,0 @@
-banane
-mangue
-porte
-maison
-chat
-chien
-cheval
-charles

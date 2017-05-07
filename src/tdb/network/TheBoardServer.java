@@ -174,7 +174,7 @@ public class TheBoardServer extends Thread {
                                 USERNAMES.add(clientUsername);
 
                                 // Send packet to acknowledge the given username
-                                SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, true);
+                                SocketPacket packet = new SocketPacket(PacketType.USERNAME_ACK, true, clientUsername);
                                 out.writeObject(packet);
 
                                 if (DEBUG_MODE) {

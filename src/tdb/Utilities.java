@@ -14,7 +14,6 @@ import javafx.scene.ImageCursor;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.TextField;
@@ -32,7 +31,7 @@ import javax.imageio.ImageIO;
  */
 public class Utilities {
     
-    public static void goToHomeScreen(Button homeButton, String callerName) {
+    public static void goToHomeScreen(Control homeButton, String callerName) {
         // Close this view
         Stage stage = (Stage) homeButton.getScene().getWindow();
         stage.close();
@@ -125,7 +124,7 @@ public class Utilities {
     }
     
     public static void initDialogOwner(Dialog dialog, Control control) {
-       Stage stage = (Stage) control.getScene().getWindow(); control.getScene().getWindow();
+       Stage stage = (Stage) control.getScene().getWindow();
        dialog.initOwner(stage);
     }
 }

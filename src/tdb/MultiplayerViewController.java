@@ -5,11 +5,16 @@
  */
 package tdb;
 
+import tdb.model.AddToLine;
+import tdb.model.DrawCommand;
+import tdb.model.StartLine;
+import tdb.model.ClearDrawing;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ObservableBooleanValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -21,12 +26,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import tdb.model.PlayerTableItem;
+import tdb.network.MultiplayerClient;
 
 /**
  * FXML Controller class
@@ -54,7 +63,7 @@ public class MultiplayerViewController implements Initializable {
     @FXML
     private Label wordLabel;
     @FXML
-    private Button resetWordButton;
+    private Label timeLabel;
     @FXML
     private Canvas drawCanvas;
     @FXML
@@ -62,10 +71,16 @@ public class MultiplayerViewController implements Initializable {
     @FXML
     private TextArea chatOutput;
     @FXML
-    private TableView playerTable;
+    private TableView<PlayerTableItem> playerTable;
+    @FXML private TableColumn nameColumn;
+    @FXML private TableColumn scoreColumn;
+    ObservableList<PlayerTableItem> items = FXCollections.observableArrayList();
 
     GraphicsContext graphicsContext;
-    SimpleBooleanProperty turnToDraw = new SimpleBooleanProperty(true);
+    SimpleBooleanProperty turnToDraw = new SimpleBooleanProperty(false);
+    
+    private MultiplayerClient client;
+    private String username;
 
     /**
      * Initializes all the controls.
@@ -75,9 +90,8 @@ public class MultiplayerViewController implements Initializable {
 
         // Initialize the toolbar
         homeButton.setVisible(true);
-        sizeTextField.setText("5.0");
+        sizeTextField.setText("1.0");
         sizeTextField.setEditable(false);
-        wordLabel.setText("THE BOARD"); // TODO: Give actual word here
         colorPicker.setValue(Color.RED);
         graphicsContext = drawCanvas.getGraphicsContext2D();
 
@@ -85,6 +99,9 @@ public class MultiplayerViewController implements Initializable {
         clearButton.disableProperty().bind(turnToDraw.not());
         eraserToggle.disableProperty().bind(turnToDraw.not());
         colorPicker.disableProperty().bind(turnToDraw.not());
+        sizeMinusButton.disableProperty().bind(turnToDraw.not());
+        sizePlusButton.disableProperty().bind(turnToDraw.not());
+        chatInput.disableProperty().bind(turnToDraw);
         
         Utilities.initDraw(graphicsContext);
         getCurrentValues();
@@ -94,11 +111,32 @@ public class MultiplayerViewController implements Initializable {
         chatOutput.setEditable(false);
         chatOutput.setWrapText(true); // Disable horizontal scollbar
         chatOutput.setDisable(false);
-        chatInput.setPromptText("Enter msg/guess here..");
+        chatInput.setPromptText("Enter msg/guess here..");        
 
-        // Set up players table
-        // TODO: Create Players' TableView here and populate it (Name, Score).
-        // The player currently drawing shoud be highlighted (say it in tooltip text too). 
+        client = TheDrawingBoard.getMultiplayerClient();
+        
+        client.setChatData(chatOutput);
+        client.setGc(graphicsContext);
+        client.setTurnToDraw(turnToDraw);
+        client.setPlayersList(items);
+        client.setCurrentWord(wordLabel);
+        client.setTimeLeft(timeLabel);
+        
+        if(client.isHostClient()) {
+            // Let host handle game initialization (as far as GameState go)
+            client.goNextRound();
+        }
+        // Set up players' table
+        nameColumn.setCellValueFactory(new PropertyValueFactory<PlayerTableItem, String>("name"));
+        scoreColumn.setCellValueFactory(new PropertyValueFactory<PlayerTableItem, Integer>("score"));
+        playerTable.setItems(items);
+        
+        username = client.getUserAckMessage();
+        
+        // Initialize time
+        timeLabel.setText(Integer.toString(client.getGameState().getDrawingTime()));
+        
+        
     }
 
     /**
@@ -125,10 +163,12 @@ public class MultiplayerViewController implements Initializable {
 
         // If user clicked yes -> Disconnect, go back to home screen
         if (result.isPresent() && result.get().equals(ButtonType.YES)) {
-            // TODO : Disconnect client. 
-            Utilities.goToHomeScreen(homeButton, MultiplayerViewController.class.getName());
-        } else {
-            // User clicked no or cancelled -> Do nothing.
+            if(client.isHostClient()) {
+                TheDrawingBoard.disconnectMultiplayerServer();
+                client.disconnect();                
+            } else {
+                client.disconnect();
+            }
         }
     }
 
@@ -141,11 +181,7 @@ public class MultiplayerViewController implements Initializable {
     private void clearPanel(ActionEvent event) {
         DrawCommand command = new ClearDrawing();
         command.doIt(graphicsContext);
-        /*
-        if (tbClient != null) {
-            tbClient.sendCommand(command);
-        }
-         */
+        client.sendCommand(command);
         getCurrentValues();
     }
 
@@ -198,7 +234,7 @@ public class MultiplayerViewController implements Initializable {
             DrawCommand command = new AddToLine(event.getX(), event.getY(), drawColor, lineWidth);
             command.doIt(graphicsContext);
 
-            // TODO : Send command to server
+            client.sendCommand(command);
         } else {
             Utilities.setForbiddenCursor(drawCanvas);
         }
@@ -228,7 +264,7 @@ public class MultiplayerViewController implements Initializable {
             double lineWidth = Double.parseDouble(sizeTextField.getText());
             DrawCommand command = new StartLine(event.getX(), event.getY(), colorPicker.getValue(), lineWidth);
             command.doIt(graphicsContext);
-            //TODO : Send command
+            client.sendCommand(command);
         } else {
             Utilities.setForbiddenCursor(drawCanvas);
         }
@@ -236,12 +272,10 @@ public class MultiplayerViewController implements Initializable {
 
     @FXML
     private void sendMessage(ActionEvent event) {
-        /* Prototype
-        if (tbClient != null && !chatInput.getText().isEmpty()) {
-            tbClient.sendMessage(username + ": " + chatInput.getText());
+        if (client != null && !chatInput.getText().isEmpty()) {
+            client.sendMessage(username + ": " + chatInput.getText());
             chatInput.clear();
         }
-        */
     }
 
 }

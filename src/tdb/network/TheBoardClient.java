@@ -16,7 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
-import tdb.DrawCommand;
+import tdb.model.DrawCommand;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.TextArea;
 import tdb.TheDrawingBoard;
@@ -28,21 +28,19 @@ import tdb.TheDrawingBoard;
  */
 public class TheBoardClient {
 
-    private static Socket socket = null;
-    private static ObjectOutputStream output = null;
-    private static ObjectInputStream input = null;
-    private static int port;
-    private static GraphicsContext gc;
-    private static ObservableList<String> users;
+    private Socket socket = null;
+    private ObjectOutputStream output = null;
+    private ObjectInputStream input = null;
+    private GraphicsContext gc;
+    private ObservableList<String> users;
     private boolean userAck = false;
-    private String userAckMessage = null;
+    private String userAckMessage = "";
     private TextArea chatData;
     private boolean clearToDraw = true;
 
     public TheBoardClient(String hostname, GraphicsContext gc, ObservableList<String> usersList, TextArea chatData) throws UnknownHostException, IOException {
 
-        port = TheBoardServer.listeningPort;
-        socket = new Socket(hostname, port);
+        socket = new Socket(hostname, TheBoardServer.listeningPort);
         output = new ObjectOutputStream(socket.getOutputStream());
         output.flush();
         input = new ObjectInputStream(socket.getInputStream());
