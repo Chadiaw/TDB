@@ -128,9 +128,7 @@ public class MultiplayerLobbyController implements Initializable {
                 }
             } else {
                 client.disconnect();
-                client = null;
-                TheDrawingBoard.setMultiplayerClient(null);
-                Utilities.goToHomeScreen(startButton, "MultiplayerLobbyController");
+                //client = null;
                 break;
             }    
         }
@@ -169,11 +167,10 @@ public class MultiplayerLobbyController implements Initializable {
         playersList.getScene().getWindow().setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent event) {
+                client.disconnect();
                 if (client.isHostClient()) {
                     TheDrawingBoard.disconnectMultiplayerServer();
-                }
-                client.disconnect();
-                TheDrawingBoard.setMultiplayerClient(null);
+                } 
             }
         });
     }

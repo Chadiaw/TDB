@@ -34,6 +34,7 @@ public class MultiplayerServer extends Thread {
     
     private static MultiplayerGameState sharedGameState;
     private static final List<String> USERNAMES = Collections.synchronizedList(new ArrayList<String>());
+    private static int readyClients = 0;
     private static final List<ObjectOutputStream> CLIENTS_STREAMS = Collections
             .synchronizedList(new ArrayList<ObjectOutputStream>());
 
@@ -180,6 +181,7 @@ public class MultiplayerServer extends Thread {
                     broadcast(players);
                 }
                 
+                OUTER:
                 // Phase 2 : In lobby or game
                 while(true) {
                     SocketPacket received = (SocketPacket)in.readObject();
@@ -191,12 +193,37 @@ public class MultiplayerServer extends Thread {
                             break;
                         case GAME_START:
                             gameStarted = true;
-                            sharedGameState.nextRound();
+                            //sharedGameState.nextRound();
+                            //SocketPacket initState = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
                             broadcast(received); 
+                            break;
+                        case READY:
+                            readyClients++;
+                            if(readyClients == CLIENTS_STREAMS.size()) {
+                                // All the clients are ready
+                                if (sharedGameState.checkWinner().equals("")) {
+                                    // No winner, start next round
+                                    sharedGameState.nextRound();
+                                    SocketPacket nextRound = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
+                                    broadcast(nextRound);
+                                } else {
+                                    // We have a winner
+                                    String msg = "We have a winner ! Congratulations " + sharedGameState.checkWinner() + " :D\n";
+                                    SocketPacket announceWinner = new SocketPacket(PacketType.MESSAGE, msg);
+                                    broadcast(announceWinner);
+                                    // End the game
+                                    SocketPacket endGameNotice = new SocketPacket(PacketType.END_GAME, true);
+                                    broadcast(endGameNotice);
+                                }
+                                SocketPacket list = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
+                                broadcast(list);
+                                readyClients = 0;
+                            }
                             break;
                         case MESSAGE:
                             broadcast(received);
                             String message = received.getMsg();
+                            // If game started, check if message matches the current hidden word. 
                             if(sharedGameState != null && sharedGameState.hasGameStarted()) {
                                     String[] words = message.replaceAll("\n", "").split(" ");
                                     String lastWord = words[words.length-1].toLowerCase();
@@ -204,8 +231,11 @@ public class MultiplayerServer extends Thread {
                                         // Good guess. Player wins the round
                                         SocketPacket roundWinner = new SocketPacket(PacketType.FOUND_WORD, clientUsername);
                                         broadcast(roundWinner);
+                                        sharedGameState.roundWinner(clientUsername);
+                                        SocketPacket updatedScores = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
+                                        broadcast(updatedScores);
                                     } 
-                                }
+                            }
                             break;
                         case TIME_UP:
                             // One of the clients time out expired. 
@@ -218,32 +248,25 @@ public class MultiplayerServer extends Thread {
                             SocketPacket listUpdated = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
                             broadcast(listUpdated);
                             break;
-                        case NEXT_ROUND:
-                            //sharedGameState = (MultiplayerGameState) received.getObject();
-                            if(sharedGameState.checkWinner().equals("")) {
-                                // No winner, start next round
-                                sharedGameState.nextRound();
-                                SocketPacket nextRoundReady = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
-                                broadcast(nextRoundReady);
-                            } else {
-                                // We have a winner
-                                String msg = "We have a winner ! Congratulations " + sharedGameState.checkWinner() + " :D\n";
-                                SocketPacket announceWinner = new SocketPacket(PacketType.MESSAGE, msg);
-                                broadcast(announceWinner);
-                                // End the game
-                                SocketPacket endGameNotice = new SocketPacket(PacketType.END_GAME, true);
-                                broadcast(endGameNotice);
-                            }
-                            SocketPacket list = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
-                            broadcast(list);
-                            break;
                         case DISCONNECT:
-                            SocketPacket notice = new SocketPacket(PacketType.USER_DC, clientUsername);
+                            sharedGameState.removePlayer(clientUsername);
                             USERNAMES.remove(clientUsername);
                             CLIENTS_STREAMS.remove(out);
+                            String msg = "Player '" + clientUsername + "' disconnected.\n";
+                            SocketPacket notice = new SocketPacket(PacketType.MESSAGE, msg);
                             broadcast(notice);
-                            clientSocket.close();
-                            return;
+                            if (sharedGameState.hasGameStarted()) {
+                                // If not enough players left, announce default winner and end the game.
+                                if (sharedGameState.getPlayers().size() < 2) {
+                                    String str = "Not enough players left. The winner by default is : "
+                                            + sharedGameState.getPlayers().get(0).getName() + ".\n";
+                                    SocketPacket defaultWin = new SocketPacket(PacketType.MESSAGE, str);
+                                    broadcast(defaultWin);
+                                    SocketPacket endGameNotice = new SocketPacket(PacketType.END_GAME, true);
+                                    broadcast(endGameNotice);
+                                }
+                            }
+                            break OUTER;
                         default:
                             break;
                     }  

@@ -16,6 +16,8 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
@@ -34,6 +36,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.stage.WindowEvent;
 import tdb.model.PlayerTableItem;
 import tdb.network.MultiplayerClient;
 
@@ -122,10 +125,6 @@ public class MultiplayerViewController implements Initializable {
         client.setCurrentWord(wordLabel);
         client.setTimeLeft(timeLabel);
         
-        if(client.isHostClient()) {
-            // Let host handle game initialization (as far as GameState go)
-            client.goNextRound();
-        }
         // Set up players' table
         nameColumn.setCellValueFactory(new PropertyValueFactory<PlayerTableItem, String>("name"));
         scoreColumn.setCellValueFactory(new PropertyValueFactory<PlayerTableItem, Integer>("score"));
@@ -133,10 +132,12 @@ public class MultiplayerViewController implements Initializable {
         
         username = client.getUserAckMessage();
         
-        // Initialize time
+        // Initialize time and word
         timeLabel.setText(Integer.toString(client.getGameState().getDrawingTime()));
+        wordLabel.setText("Ready");
         
-        
+        // Send ready signal
+        client.sendReady();
     }
 
     /**
@@ -164,12 +165,25 @@ public class MultiplayerViewController implements Initializable {
         // If user clicked yes -> Disconnect, go back to home screen
         if (result.isPresent() && result.get().equals(ButtonType.YES)) {
             if(client.isHostClient()) {
-                TheDrawingBoard.disconnectMultiplayerServer();
-                client.disconnect();                
+                client.disconnect(); 
+                TheDrawingBoard.disconnectMultiplayerServer();               
             } else {
                 client.disconnect();
             }
         }
+    }
+    
+    @FXML
+    private void quitMode(Event dummyEvent) {
+        playerTable.getScene().getWindow().setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                client.disconnect();
+                if (client.isHostClient()) {
+                    TheDrawingBoard.disconnectMultiplayerServer();
+                }
+            }
+        });
     }
 
     @FXML

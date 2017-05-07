@@ -58,7 +58,7 @@ public class MultiplayerClient {
     private MultiplayerGameState gameState;
     private ObservableList<PlayerTableItem> playersList; 
     private String userAckMessage = ""; // contains username or the reason why it's not valid.
-    private final int START_TIME = 5, TIME_BETWEEN_ROUNDS = 2;
+    private final int START_TIME = 5;
     private Integer timeLeftValue, startTime = START_TIME;
     private SimpleBooleanProperty turnToDraw;
     private Timeline roundTimeline;
@@ -208,15 +208,15 @@ public class MultiplayerClient {
         }
     }
     
-    public void goNextRound() {
+    public void sendReady() {
         if (socket != null && input != null && output != null) {
             try {
-                SocketPacket packet = new SocketPacket(PacketType.NEXT_ROUND, true);
+                SocketPacket packet = new SocketPacket(PacketType.READY, true);
                 output.writeObject(packet);
             } catch (IOException ex) {
                 Logger.getLogger(MultiplayerClient.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } 
+        }
     }
     
     private void initRoundTimeline() {
@@ -230,7 +230,9 @@ public class MultiplayerClient {
                                 timeLeftValue--;
                                 if (timeLeftValue <= 0) {
                                     roundTimeline.stop();
+                                    timeLeft.setText("N/A");
                                     sendTimeUpEvent();
+                                    return;
                                 }
                                 timeLeft.setText(Integer.toString(timeLeftValue));
 
@@ -250,27 +252,29 @@ public class MultiplayerClient {
     }
     
     private void executeTimeUpEvent() {
-        chatData.appendText("Time up ! Next round starting soon...\n\n");
-        try {
-            Thread.sleep(1000*TIME_BETWEEN_ROUNDS);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(MultiplayerClient.class.getName()).log(Level.SEVERE, null, ex);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                roundTimeline.stop();
+                timeLeft.setText("N/A");
+                chatData.appendText("Time up ! Next round starting soon...\n\n");
+                sendReady(); // Ready for next round
+            }
         }
-        if(turnToDraw.get())
-            goNextRound(); // This way only one client sends the signal (bug-fix)
+        );
     } 
     
     private void roundWinner(String winner) {
-        chatData.appendText(winner + " guessed correctly and wins the round !\n\n");
-        gameState.roundWinner(winner);
-        updateGameState();
-        try {
-            Thread.sleep(1000*TIME_BETWEEN_ROUNDS);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(MultiplayerClient.class.getName()).log(Level.SEVERE, null, ex);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                roundTimeline.stop();
+                timeLeft.setText("N/A");
+                chatData.appendText(winner + " guessed correctly and wins the round !\n\n");
+                sendReady(); // Ready for next round
+            }
         }
-        if(turnToDraw.get())
-            goNextRound(); // This way only one client sends the signal (bug-fix)
+        );
     }
     
     private void startGame() {
@@ -407,19 +411,6 @@ public class MultiplayerClient {
                                     }
                                 });
                                 break;
-                            case USER_DC:
-                                chatData.appendText("Player '" + received.getMsg() + "' disconnected.\n");
-                                gameState.removePlayer(received.getMsg());
-                                if(gameState.hasGameStarted()) {
-                                    if (gameState.getPlayers().size() < 2) {
-                                        // Game is ending. Left player is the winner. 
-                                        chatData.appendText("Not enough players left. The winner by default is : "
-                                                + gameState.getPlayers().get(0).getName() + ".\n");
-                                        //endGame(); 
-                                    }
-                                }
-                                updateGameState();
-                                break;
                             case USERNAME_ACK:
                                 userAck = (boolean) received.getObject();
                                 userAckMessage = received.getMsg();
@@ -429,11 +420,9 @@ public class MultiplayerClient {
                                 chatData.appendText(message);
                                 break;
                             case FOUND_WORD:
-                                roundTimeline.stop();
                                 roundWinner(received.getMsg());
                                 break;
                             case TIME_UP:
-                                roundTimeline.stop();
                                 executeTimeUpEvent();
                                 break;
                             case GAME_START:
