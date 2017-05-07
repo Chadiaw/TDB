@@ -165,24 +165,26 @@ public class MultiplayerLobbyController implements Initializable {
             }
         });
         
-        
-        URL whatismyip;
-        try {
-            chatOutput.appendText("Your local IP is : " + InetAddress.getLocalHost().getHostAddress() + ".\n");
-            whatismyip = new URL("http://checkip.amazonaws.com");
-            BufferedReader in = new BufferedReader(new InputStreamReader(
-                    whatismyip.openStream()));
+        if(client.isHostClient()) {
+            URL whatismyip;
+            try {
+                chatOutput.appendText("Your local IP is : " + InetAddress.getLocalHost().getHostAddress() + ".\n");
+                whatismyip = new URL("http://checkip.amazonaws.com");
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                        whatismyip.openStream()));
 
-            String ip = in.readLine(); //you get the IP as a String
-            if(ip != null && !ip.isEmpty()) {
-                chatOutput.appendText("Your public IP is : " + ip + ".\n");
-            }
+                String ip = in.readLine(); //you get the IP as a String
+                if (ip != null && !ip.isEmpty()) {
+                    chatOutput.appendText("Your public IP is : " + ip + ".\n");
+                }
 
-        } catch (MalformedURLException ex) {
-            Logger.getLogger(MultiplayerLobbyController.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(MultiplayerLobbyController.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(MultiplayerLobbyController.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(MultiplayerLobbyController.class.getName()).log(Level.SEVERE, null, ex);
+            }  
         }
+        
         
     }
     

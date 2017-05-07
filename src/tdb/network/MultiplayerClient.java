@@ -350,7 +350,8 @@ public class MultiplayerClient {
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                        disconnect();
+                                        TheDrawingBoard.setMultiplayerClient(null);
+                                        Utilities.goToHomeScreen(chatData, "MultiplayerLobbyController");
                                         if (isHostClient) {
                                             TheDrawingBoard.disconnectMultiplayerServer();
                                         }
