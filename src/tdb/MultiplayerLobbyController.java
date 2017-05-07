@@ -5,6 +5,11 @@
  */
 package tdb;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -159,6 +164,25 @@ public class MultiplayerLobbyController implements Initializable {
                 }
             }
         });
+        
+        
+        URL whatismyip;
+        try {
+            chatOutput.appendText("Your local IP is : " + InetAddress.getLocalHost().getHostAddress() + ".\n");
+            whatismyip = new URL("http://checkip.amazonaws.com");
+            BufferedReader in = new BufferedReader(new InputStreamReader(
+                    whatismyip.openStream()));
+
+            String ip = in.readLine(); //you get the IP as a String
+            if(ip != null && !ip.isEmpty()) {
+                chatOutput.appendText("Your public IP is : " + ip + ".\n");
+            }
+
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(MultiplayerLobbyController.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(MultiplayerLobbyController.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
     }
     
