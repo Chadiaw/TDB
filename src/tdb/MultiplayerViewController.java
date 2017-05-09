@@ -95,7 +95,7 @@ public class MultiplayerViewController implements Initializable {
         homeButton.setVisible(true);
         sizeTextField.setText("1.0");
         sizeTextField.setEditable(false);
-        colorPicker.setValue(Color.RED);
+        colorPicker.setValue(Color.BLACK);
         graphicsContext = drawCanvas.getGraphicsContext2D();
 
         // Bind controls to boolean value
