@@ -184,6 +184,8 @@ public class MultiplayerServer extends Thread {
                     broadcast(players);
                 }
                 
+                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                
                 OUTER:
                 // Phase 2 : In lobby or game
                 while(true) {
@@ -209,12 +211,14 @@ public class MultiplayerServer extends Thread {
                                     sharedGameState.nextRound();
                                     SocketPacket nextRound = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
                                     broadcast(nextRound);
-                                    final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                                    if(scheduler.isShutdown()) {
+                                        scheduler = Executors.newScheduledThreadPool(1);
+                                    }
                                     scheduler.schedule(new Runnable() {
                                         @Override
                                         public void run() {
                                             SocketPacket timeUp = new SocketPacket(PacketType.TIME_UP, true);
-                                            broadcast(timeUp); 
+                                            broadcast(timeUp);
                                         }
                                     }, sharedGameState.getDrawingTime(), TimeUnit.SECONDS);
                                 } else {
@@ -239,6 +243,10 @@ public class MultiplayerServer extends Thread {
                                     String[] words = message.replaceAll("\n", "").split(" ");
                                     String lastWord = words[words.length-1].toLowerCase();
                                     if(lastWord.equals(sharedGameState.getCurrentWord().toLowerCase())) {
+                                        // Stop timeout
+                                        if(scheduler != null) {
+                                            scheduler.shutdownNow();
+                                        }
                                         // Good guess. Player wins the round
                                         SocketPacket roundWinner = new SocketPacket(PacketType.FOUND_WORD, clientUsername);
                                         broadcast(roundWinner);
