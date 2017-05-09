@@ -230,8 +230,7 @@ public class MultiplayerClient {
                                 timeLeftValue--;
                                 if (timeLeftValue <= 0) {
                                     roundTimeline.stop();
-                                    timeLeft.setText("N/A");
-                                    sendTimeUpEvent();
+                                    timeLeft.setText("0");
                                     return;
                                 }
                                 timeLeft.setText(Integer.toString(timeLeftValue));
@@ -240,22 +239,11 @@ public class MultiplayerClient {
                         }));
     }
     
-    private void sendTimeUpEvent() {
-        if (socket != null && input != null && output != null) {
-            try {
-                SocketPacket packet = new SocketPacket(PacketType.TIME_UP, true);
-                output.writeObject(packet);
-            } catch (IOException ex) {
-                Logger.getLogger(MultiplayerClient.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } 
-    }
-    
     private void executeTimeUpEvent() {
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
-                roundTimeline.stop();
+                roundTimeline.stop(); 
                 timeLeft.setText("N/A");
                 chatData.appendText("Time up ! The word was : " + gameState.getCurrentWord()
                         + ".\nNext round starting soon...\n\n");

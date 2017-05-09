@@ -80,7 +80,7 @@ public class WordsManager {
             "Helicopter",
             "Hockey",
             "House",
-            "Ice cream",
+            "Ice-cream",
             "Jersey",
             "Keyboard",
             "Ladder",

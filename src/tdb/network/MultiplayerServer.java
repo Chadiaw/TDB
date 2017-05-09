@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import tdb.model.MultiplayerGameState;
@@ -206,6 +209,14 @@ public class MultiplayerServer extends Thread {
                                     sharedGameState.nextRound();
                                     SocketPacket nextRound = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
                                     broadcast(nextRound);
+                                    final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                                    scheduler.schedule(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            SocketPacket timeUp = new SocketPacket(PacketType.TIME_UP, true);
+                                            broadcast(timeUp); 
+                                        }
+                                    }, sharedGameState.getDrawingTime(), TimeUnit.SECONDS);
                                 } else {
                                     // We have a winner
                                     String msg = "We have a winner ! Congratulations " + sharedGameState.checkWinner() + " :D\n";
