@@ -211,7 +211,9 @@ public class MultiplayerServer extends Thread {
                                     sharedGameState.nextRound();
                                     SocketPacket nextRound = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
                                     broadcast(nextRound);
-                                    if(scheduler.isShutdown()) {
+                                    
+                                    // Schedule future timeup signal
+                                    if(scheduler == null || scheduler.isShutdown()) {
                                         scheduler = Executors.newScheduledThreadPool(1);
                                     }
                                     scheduler.schedule(new Runnable() {
@@ -253,13 +255,9 @@ public class MultiplayerServer extends Thread {
                                         sharedGameState.roundWinner(clientUsername);
                                         SocketPacket updatedScores = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
                                         broadcast(updatedScores);
+                                        readyClients = 0;
                                     } 
                             }
-                            break;
-                        case TIME_UP:
-                            // One of the clients time out expired. 
-                            // This is to make sure all the timers stay relatively synchronized.
-                            broadcast(received);
                             break;
                         case GAMESTATE_UPDATE:
                             sharedGameState = (MultiplayerGameState) received.getObject();

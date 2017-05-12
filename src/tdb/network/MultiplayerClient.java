@@ -247,7 +247,6 @@ public class MultiplayerClient {
                 timeLeft.setText("N/A");
                 chatData.appendText("Time up ! The word was : " + gameState.getCurrentWord()
                         + ".\nNext round starting soon...\n\n");
-                sendReady(); // Ready for next round
             }
         }
         );
@@ -260,7 +259,6 @@ public class MultiplayerClient {
                 roundTimeline.stop();
                 timeLeft.setText("N/A");
                 chatData.appendText(winner + " guessed correctly and wins the round !\n\n");
-                sendReady(); // Ready for next round
             }
         }
         );
@@ -411,9 +409,21 @@ public class MultiplayerClient {
                                 break;
                             case FOUND_WORD:
                                 roundWinner(received.getMsg());
+                                try {
+                                    Thread.sleep(1500);
+                                } catch (InterruptedException ex) {
+                                    Logger.getLogger(MultiplayerClient.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                sendReady(); // Ready for next round
                                 break;
                             case TIME_UP:
                                 executeTimeUpEvent();
+                                try {
+                                    Thread.sleep(1500);
+                                } catch (InterruptedException ex) {
+                                    Logger.getLogger(MultiplayerClient.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                sendReady(); // Ready for next round
                                 break;
                             case GAME_START:
                                 startGame();
