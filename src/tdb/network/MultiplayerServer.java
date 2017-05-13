@@ -15,9 +15,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import tdb.model.MultiplayerGameState;
@@ -31,6 +30,8 @@ public class MultiplayerServer extends Thread {
 
     public static int listeningPort = 54445;
     private ServerSocket serverSocket;
+    private static final List<ObjectOutputStream> CLIENTS_STREAMS = Collections
+            .synchronizedList(new ArrayList<ObjectOutputStream>());
 
     private static boolean gameStarted = false;
     private boolean hostDefined = false; 
@@ -38,9 +39,10 @@ public class MultiplayerServer extends Thread {
     private static MultiplayerGameState sharedGameState;
     private static final List<String> USERNAMES = Collections.synchronizedList(new ArrayList<String>());
     private static int readyClients = 0;
-    private static final List<ObjectOutputStream> CLIENTS_STREAMS = Collections
-            .synchronizedList(new ArrayList<ObjectOutputStream>());
-
+    
+    // Timer variables
+    private static Timer timer = new Timer(); 
+    
     public MultiplayerServer() {
         super("MultiplayerServer");
     }
@@ -184,8 +186,6 @@ public class MultiplayerServer extends Thread {
                     broadcast(players);
                 }
                 
-                ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                
                 OUTER:
                 // Phase 2 : In lobby or game
                 while(true) {
@@ -198,43 +198,52 @@ public class MultiplayerServer extends Thread {
                             break;
                         case GAME_START:
                             gameStarted = true;
-                            //sharedGameState.nextRound();
-                            //SocketPacket initState = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
                             broadcast(received); 
                             break;
                         case READY:
                             readyClients++;
-                            if(readyClients == CLIENTS_STREAMS.size()) {
-                                // All the clients are ready
-                                if (sharedGameState.checkWinner().equals("")) {
-                                    // No winner, start next round
-                                    sharedGameState.nextRound();
-                                    SocketPacket nextRound = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
-                                    broadcast(nextRound);
-                                    
-                                    // Schedule future timeup signal
-                                    if(scheduler == null || scheduler.isShutdown()) {
-                                        scheduler = Executors.newScheduledThreadPool(1);
+                            synchronized(CLIENTS_STREAMS) {
+                                if (readyClients == CLIENTS_STREAMS.size()) {
+                                    // All the clients are ready
+                                    if (sharedGameState.checkWinner().equals("")) {
+                                        // No winner, start next round
+                                        sharedGameState.nextRound();
+                                        SocketPacket nextRound = new SocketPacket(PacketType.NEXT_ROUND, sharedGameState);
+                                        broadcast(nextRound);
+
+                                        // Schedule future task (send time up alert)
+                                        timer = new Timer();
+                                        final TimerTask task = new TimerTask() {
+                                            @Override
+                                            public void run() {
+                                                SocketPacket timeUp = new SocketPacket(PacketType.TIME_UP, true);
+                                                broadcast(timeUp);
+                                                timer.cancel();
+                                                timer.purge();
+                                            }
+
+                                        };
+                                        timer.schedule(task, sharedGameState.getDrawingTime() * 1000);
+                                       
+                                        // Send players list and scores
+                                        SocketPacket list = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
+                                        broadcast(list);
+
+                                    } else {
+                                        // We have a winner - announce it
+                                        String msg = "We have a winner ! Congratulations " + sharedGameState.checkWinner() + " :D\n";
+                                        SocketPacket announceWinner = new SocketPacket(PacketType.MESSAGE, msg);
+                                        broadcast(announceWinner);
+                                        
+                                        // Send final scores
+                                        SocketPacket list = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
+                                        broadcast(list);
+                                        // End the game
+                                        SocketPacket endGameNotice = new SocketPacket(PacketType.END_GAME, true);
+                                        broadcast(endGameNotice);
                                     }
-                                    scheduler.schedule(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            SocketPacket timeUp = new SocketPacket(PacketType.TIME_UP, true);
-                                            broadcast(timeUp);
-                                        }
-                                    }, sharedGameState.getDrawingTime(), TimeUnit.SECONDS);
-                                } else {
-                                    // We have a winner
-                                    String msg = "We have a winner ! Congratulations " + sharedGameState.checkWinner() + " :D\n";
-                                    SocketPacket announceWinner = new SocketPacket(PacketType.MESSAGE, msg);
-                                    broadcast(announceWinner);
-                                    // End the game
-                                    SocketPacket endGameNotice = new SocketPacket(PacketType.END_GAME, true);
-                                    broadcast(endGameNotice);
+                                    readyClients = 0;
                                 }
-                                SocketPacket list = new SocketPacket(PacketType.LIST, sharedGameState.getPlayers());
-                                broadcast(list);
-                                readyClients = 0;
                             }
                             break;
                         case MESSAGE:
@@ -245,10 +254,10 @@ public class MultiplayerServer extends Thread {
                                     String[] words = message.replaceAll("\n", "").split(" ");
                                     String lastWord = words[words.length-1].toLowerCase();
                                     if(lastWord.equals(sharedGameState.getCurrentWord().toLowerCase())) {
-                                        // Stop timeout
-                                        if(scheduler != null) {
-                                            scheduler.shutdownNow();
-                                        }
+                                        // Stop timer
+                                        timer.cancel();
+                                        timer.purge();
+                                        
                                         // Good guess. Player wins the round
                                         SocketPacket roundWinner = new SocketPacket(PacketType.FOUND_WORD, clientUsername);
                                         broadcast(roundWinner);
